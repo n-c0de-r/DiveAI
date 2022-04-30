@@ -7,12 +7,12 @@ import lenz.htw.ai4g.ai.DivingAction;
 import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
-public class FirstAI3 extends AI {
+public class GameAI_Ex2_Diver1 extends AI {
 	
-	public FirstAI3 (Info info) {
+	public GameAI_Ex2_Diver1 (Info info) {
 		super(info);
 		
-		enlistForTournament(577683, 577423);
+		//enlistForTournament(577683, 577423);
 	}
 
 	@Override
