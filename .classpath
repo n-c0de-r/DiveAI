@@ -6,6 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="../ai.jar"/>
+	<classpathentry kind="lib" path="src/ai.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

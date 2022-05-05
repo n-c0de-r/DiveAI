@@ -1,8 +1,11 @@
 package s0577683;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.geom.Path2D;
+import java.util.Iterator;
 
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;
@@ -17,6 +20,11 @@ public class GameAI_Ex2_Diver1 extends AI {
 	private int currentScore = 0;
 	private Path2D[] obstacles;
 	private int obstacleIndex;
+	int width = info.getScene().getWidth();
+	int height = info.getScene().getHeight();
+	
+	private final int CELL_SIZE = 10;
+	private boolean[][] freespaceMatrix = new boolean[width/CELL_SIZE][height/CELL_SIZE];
 	
 	public GameAI_Ex2_Diver1 (Info info) {
 		super(info);
@@ -27,6 +35,23 @@ public class GameAI_Ex2_Diver1 extends AI {
 		pearls = info.getScene().getPearl();
 		nearestPearl = findNearestPearl(pearls);
 		playerDirection = calculateDirectionToPoint(nearestPearl);
+		Rectangle rect = new Rectangle();
+		
+		for (int x = 0; x < width/CELL_SIZE; x++) {
+			innerLoop: for (int y = 0; y < height/CELL_SIZE; y++) {
+				rect.setBounds(x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+				
+				// Check intersections of Rectangles with Sandbanks
+				for(Path2D obstacle : obstacles) {
+					if(obstacle.intersects(rect) ) {
+						// If any intersection is found, skipp it
+						continue innerLoop;
+					}
+				}
+				// Only if it doesn't intersect any, path is free
+				freespaceMatrix[x][y] = true;
+			}
+		}
 	}
 
 	@Override
@@ -61,11 +86,26 @@ public class GameAI_Ex2_Diver1 extends AI {
 //		} else {
 			playerDirection = calculateDirectionToPoint(nearestPearl);
 //		}
+	
 		
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
 	
-	
+	@Override
+	public void drawDebugStuff(Graphics2D gtx) {
+		gtx.setColor(Color.red);
+		gtx.drawOval(nearestPearl.x-4, nearestPearl.y-4, 8, 8);
+		gtx.setColor(Color.green);
+		for (int i = 0; i < freespaceMatrix.length; i++) {
+			for (int j = 0; j < freespaceMatrix[i].length; j++) {
+				if (freespaceMatrix[i][j]) {
+					gtx.drawOval(i*10+3, j*10+3, 4, 4);
+				}
+				
+			}
+			
+		}
+	}
 	
 	//---------------------Helper Methods-----------------------------
 	
