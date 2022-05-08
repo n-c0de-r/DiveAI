@@ -13,45 +13,37 @@ import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
 public class GameAI_Ex2_Diver1 extends AI {
-	private Point[] pearls;
-	private Point nearestPearl;
-	private int nearestPearlIndex;
-	private float playerDirection;
-	private int currentScore = 0;
-	private Path2D[] obstacles;
-	private int obstacleIndex;
-	int width = info.getScene().getWidth();
-	int height = info.getScene().getHeight();
-	
 	private final int CELL_SIZE = 10;
-	private boolean[][] freespaceMatrix = new boolean[width/CELL_SIZE][height/CELL_SIZE];
+	
+	//Complex Types
+	private Path2D[] obstacleArray;
+	private Point nearestPearl;
+	private Point[] pearlArray;
+	
+	//Primitive Types
+	private boolean[][] freespaceMatrix;
+	private int currentScore;
+	private int nearestPearlIndex;
+	private int obstacleIndex;
+	private int sceneHeight;
+	private int sceneWidth;
+	private float playerDirection;
 	
 	public GameAI_Ex2_Diver1 (Info info) {
 		super(info);
 		
 		enlistForTournament(577683, 577423);
 		
-		obstacles = info.getScene().getObstacles();
-		pearls = info.getScene().getPearl();
-		nearestPearl = findNearestPearl(pearls);
+		//Get initial values 
+		currentScore = 0;
+		obstacleArray = info.getScene().getObstacles();
+		pearlArray = info.getScene().getPearl();
+		sceneHeight = info.getScene().getHeight();
+		sceneWidth = info.getScene().getWidth();
+		//Get calculated values
+		freespaceMatrix = calculateIntersections(sceneWidth, sceneHeight);
+		nearestPearl = findNearestPearl(pearlArray);
 		playerDirection = calculateDirectionToPoint(nearestPearl);
-		Rectangle rect = new Rectangle();
-		
-		for (int x = 0; x < width/CELL_SIZE; x++) {
-			innerLoop: for (int y = 0; y < height/CELL_SIZE; y++) {
-				rect.setBounds(x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
-				
-				// Check intersections of Rectangles with Sandbanks
-				for(Path2D obstacle : obstacles) {
-					if(obstacle.intersects(rect) ) {
-						// If any intersection is found, skipp it
-						continue innerLoop;
-					}
-				}
-				// Only if it doesn't intersect any, path is free
-				freespaceMatrix[x][y] = true;
-			}
-		}
 	}
 
 	@Override
@@ -74,8 +66,8 @@ public class GameAI_Ex2_Diver1 extends AI {
 		// Detects if a pearl is collected
 		if (info.getScore() != currentScore) {
 			currentScore = info.getScore();
-			pearls[nearestPearlIndex] = null;
-			nearestPearl = findNearestPearl(pearls);
+			pearlArray[nearestPearlIndex] = null;
+			nearestPearl = findNearestPearl(pearlArray);
 			playerDirection = calculateDirectionToPoint(nearestPearl);
 		}
 		
@@ -92,93 +84,25 @@ public class GameAI_Ex2_Diver1 extends AI {
 	}
 	
 	@Override
-	public void drawDebugStuff(Graphics2D gtx) {
-		gtx.setColor(Color.red);
-		gtx.drawOval(nearestPearl.x-4, nearestPearl.y-4, 8, 8);
-		gtx.setColor(Color.green);
+	public void drawDebugStuff(Graphics2D gfx) {
+		// Draw red oval at aim
+		gfx.setColor(Color.red);
+		gfx.drawOval(nearestPearl.x-4, nearestPearl.y-4, 8, 8);
+		
+		// Draw green ovals in freespace
+		/*gfx.setColor(Color.green);
 		for (int i = 0; i < freespaceMatrix.length; i++) {
 			for (int j = 0; j < freespaceMatrix[i].length; j++) {
 				if (freespaceMatrix[i][j]) {
-					gtx.drawOval(i*10+3, j*10+3, 4, 4);
+					gfx.drawOval(i*10+3, j*10+3, 4, 4);
 				}
 				
 			}
 			
-		}
+		}*/
 	}
 	
 	//---------------------Helper Methods-----------------------------
-	
-	
-	
-	/**
-	 * Calculates a direction to a certain Point, from player position.
-	 * 
-	 * @param point	Point to calculate the distance to.
-	 * @return
-	 */
-	private float calculateDirectionToPoint(Point point) {
-		
-		double distanceX = point.x - info.getX();
-		double distanceY = point.y - info.getY();
-		
-		return (float) -Math.atan2(distanceY, distanceX);
-	}
-	
-	
-	
-	/**
-	 * Finds the peals closest to the player.
-	 * Also sets the index of that pearl for later removal.
-	 * 
-	 * @param pearls	The array of pearls to look over.
-	 * @return			A Point object of the closest pearl.
-	 */
-	private Point findNearestPearl(Point[] pearls) {
-		
-		double minimumDistance = Double.MAX_VALUE;
-		int index = 0;
-		// Check all pearls
-		for (int i = 0; i<pearls.length; i++) {
-			//If it is already collected, ignore it
-			if (pearls[i] == null) {
-				continue;
-			}
-			
-			double currentPearlDistance =  Math.sqrt(Math.pow(pearls[i].x - info.getX(), 2) + Math.pow(pearls[i].y - info.getY(), 2));
-			// A closer pearl is found, update all
-			if (currentPearlDistance < minimumDistance) {
-				minimumDistance = currentPearlDistance;
-				index = i;
-			}
-		}
-		// Updates index for removal and returns the closest Point
-		nearestPearlIndex = index;
-		return pearls[index];
-	}
-	
-	
-	
-	/**
-	 * Detects if player will collide with an obstacle.
-	 * @param playerDirection	The radians directions of the player.
-	 * @return		A Bollean value, if a collision is detected.
-	 */
-	private boolean detectCollision(float playerDirection) {
-		
-		int index = 0;
-		Point mainCollisionPoint = calculateCollisionPoint(10, playerDirection);
-		
-		for (Path2D obstacle : obstacles) {
-			if (obstacle.contains(mainCollisionPoint)) {
-				obstacleIndex = index;
-				return true;
-			}
-			index++;
-		}
-		
-		return false;
-	}
 	
 	
 	
@@ -243,6 +167,116 @@ public class GameAI_Ex2_Diver1 extends AI {
 		collisionPoint.y = (int) (info.getY() - sin * ray);
 		
 		return collisionPoint;
+	}
+	
+	
+	
+	/**
+	 * Calculates a direction to a certain Point, from player position.
+	 * 
+	 * @param point	Point to calculate the distance to.
+	 * @return
+	 */
+	private float calculateDirectionToPoint(Point point) {
+		
+		double distanceX = point.x - info.getX();
+		double distanceY = point.y - info.getY();
+		
+		return (float) -Math.atan2(distanceY, distanceX);
+	}
+	
+	
+	
+	/**
+	 * Calculates an adjacency matrix to use with a pathfinding algorithm
+	 * 
+	 * @param width		Width of part to check
+	 * @param height	Height of part to check
+	 * @return			A boolean adjacency matrix
+	 */
+	private boolean[][] calculateIntersections(int width, int height) {
+		boolean[][] tempArray  = new boolean[width/CELL_SIZE][height/CELL_SIZE];
+		Rectangle rect = new Rectangle();
+		
+		for (int x = 0; x < width/CELL_SIZE; x++) {
+			innerLoop: for (int y = 0; y < height/CELL_SIZE; y++) {
+				rect.setBounds(x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+				
+				// Check intersections of Rectangles with sand banks
+				for(Path2D obstacle : obstacleArray) {
+					if(obstacle.intersects(rect)) {
+						
+						/* If ANY intersection is found, skip this position
+						   as it is not passable keep it false */
+						continue innerLoop;
+					}
+				}
+				
+				// Only if it doesn't intersect any, path is free
+				tempArray[x][y] = true;
+			}
+		}
+		return tempArray;
+	}
+	
+	
+	
+	/**
+	 * Finds the peals closest to the player.
+	 * Also sets the index of that pearl for later removal.
+	 * 
+	 * @param pearls	The array of pearls to look over.
+	 * @return			A Point object of the closest pearl.
+	 */
+	private Point findNearestPearl(Point[] pearls) {
+		
+		double minimumDistance = Double.MAX_VALUE;
+		int index = 0;
+		
+		// Check all pearls
+		for (Point pearl : pearls) {
+			
+			//If it is already collected, ignore it and get next
+			if (pearl == null) {
+				++index;
+				continue;
+			}
+			
+			double currentPearlDistance = pearl.distance(info.getX(), info.getY());
+			
+			// A closer pearl is found, update all
+			if (currentPearlDistance < minimumDistance) {
+				minimumDistance = currentPearlDistance;
+				nearestPearlIndex = index;
+			}
+			++index;
+		}
+		
+		// Updates index for removal and returns the closest Point
+		return pearls[nearestPearlIndex];
+	}
+	
+	
+	
+	/**
+	 * Detects if player will collide with an obstacle.
+	 * @param playerDirection	The radians directions of the player.
+	 * @return		A Bollean value, if a collision is detected.
+	 */
+	private boolean detectCollision(float playerDirection) {
+		
+		int index = 0;
+		Point mainCollisionPoint = calculateCollisionPoint(10, playerDirection);
+		
+		for (Path2D obstacle : obstacleArray) {
+			if (obstacle.contains(mainCollisionPoint)) {
+				obstacleIndex = index;
+				return true;
+			}
+			index++;
+		}
+		
+		return false;
 	}
 
 }
