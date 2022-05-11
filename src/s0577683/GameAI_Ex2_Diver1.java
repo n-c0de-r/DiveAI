@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import lenz.htw.ai4g.ai.AI;
@@ -13,7 +14,7 @@ import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
 public class GameAI_Ex2_Diver1 extends AI {
-	private final int CELL_SIZE = 10;
+	private final int CELL_SIZE = 50;
 	
 	//Complex Types
 	private Path2D[] obstacleArray;
@@ -42,7 +43,8 @@ public class GameAI_Ex2_Diver1 extends AI {
 		sceneWidth = info.getScene().getWidth();
 		//Get calculated values
 		freespaceMatrix = calculateIntersections(sceneWidth, sceneHeight);
-		nearestPearl = findNearestPearl(pearlArray);
+		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
+		//nearestPearl = findNearestPearl(pearlArray); // closest always
 		playerDirection = calculateDirectionToPoint(nearestPearl);
 	}
 
@@ -78,7 +80,6 @@ public class GameAI_Ex2_Diver1 extends AI {
 //		} else {
 			playerDirection = calculateDirectionToPoint(nearestPearl);
 //		}
-	
 		
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
@@ -90,17 +91,25 @@ public class GameAI_Ex2_Diver1 extends AI {
 		gfx.drawOval(nearestPearl.x-4, nearestPearl.y-4, 8, 8);
 		
 		// Draw green ovals in freespace
-		/*gfx.setColor(Color.green);
+		gfx.setColor(Color.green);
 		for (int i = 0; i < freespaceMatrix.length; i++) {
 			for (int j = 0; j < freespaceMatrix[i].length; j++) {
-				if (freespaceMatrix[i][j]) {
-					gfx.drawOval(i*10+3, j*10+3, 4, 4);
-				}
-				
+				// Test overlay
+				/*if (freespaceMatrix[i][j]) {
+					gfx.setColor(Color.green);
+//					gfx.drawOval(i*CELL_SIZE+CELL_SIZE*2/5, j*CELL_SIZE+CELL_SIZE*2/5, CELL_SIZE/5, CELL_SIZE/5);
+					gfx.drawOval(i*CELL_SIZE, j*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+				} else {
+					gfx.setColor(Color.red);
+//					gfx.drawOval(i*CELL_SIZE+CELL_SIZE*2/5, j*CELL_SIZE+CELL_SIZE*2/5, CELL_SIZE/5, CELL_SIZE/5);
+					gfx.drawRect(i*CELL_SIZE+5, j*CELL_SIZE+5, CELL_SIZE-10, CELL_SIZE-10);
+
+				}*/
 			}
-			
-		}*/
+		}
 	}
+	
+	
 	
 	//---------------------Helper Methods-----------------------------
 	
@@ -195,7 +204,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 	 * @return			A boolean adjacency matrix
 	 */
 	private boolean[][] calculateIntersections(int width, int height) {
-		boolean[][] tempArray  = new boolean[width/CELL_SIZE][height/CELL_SIZE];
+		boolean[][] tempArray = new boolean[width/CELL_SIZE][height/CELL_SIZE];
 		Rectangle rect = new Rectangle();
 		
 		for (int x = 0; x < width/CELL_SIZE; x++) {
@@ -217,6 +226,37 @@ public class GameAI_Ex2_Diver1 extends AI {
 			}
 		}
 		return tempArray;
+	}
+	
+	
+	
+	/**
+	 * Finds the peals closest to the left edge of the screen.
+	 * Also sets the index of that pearl for later removal.
+	 * 
+	 * @param pearls	The array of pearls to look over.
+	 * @return			A Point object of the leftmost pearl.
+	 */
+	private Point findLeftmostPearl(Point[] pearls) {
+		
+		int minimumDistance = Integer.MAX_VALUE;
+		int index = 0;
+		
+		// Check all pearls
+		for (Point pearl : pearls) {
+			
+			int pearlPosX = pearl.x;
+			
+			// A closer pearl is found, update all
+			if (pearlPosX < minimumDistance) {
+				minimumDistance = pearlPosX;
+				nearestPearlIndex = index;
+			}
+			++index;
+		}
+		
+		// Updates index for removal and returns the closest Point
+		return pearls[nearestPearlIndex];
 	}
 	
 	
