@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -14,15 +15,20 @@ import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
 public class GameAI_Ex2_Diver1 extends AI {
-	private final int CELL_SIZE = 50;
+	private final int CELL_SIZE = 10;
 	
 	//Complex Types
+	private ArrayList<Node> visitNext = new ArrayList<>();
+	private ArrayList<Node> pathToFollow = new ArrayList<>();
+	private Node begin;
+	private Node end;
+	private Node[][] nodesMatrix;
 	private Path2D[] obstacleArray;
 	private Point nearestPearl;
+	private Point nextAim;
 	private Point[] pearlArray;
 	
 	//Primitive Types
-	private boolean[][] freespaceMatrix;
 	private int currentScore;
 	private int nearestPearlIndex;
 	private int obstacleIndex;
@@ -42,10 +48,22 @@ public class GameAI_Ex2_Diver1 extends AI {
 		sceneHeight = info.getScene().getHeight();
 		sceneWidth = info.getScene().getWidth();
 		//Get calculated values
-		freespaceMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
-		//nearestPearl = findNearestPearl(pearlArray); // closest always
-		playerDirection = calculateDirectionToPoint(nearestPearl);
+//		nearestPearl = findNearestPearl(pearlArray); // closest always
+		nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
+		begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
+		end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
+		begin.setDistance(0);
+		visitNext.add(begin);
+		end.setVisited(false);
+
+//		playerDirection = calculateDirectionToPoint(nearestPearl);
+		pathToFollow = calculateDijkstraPath();
+		nextAim = new Point();
+		nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
+		nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
+		pathToFollow.remove(0);
+		playerDirection = calculateDirectionToPoint(nextAim);
 	}
 
 	@Override
@@ -71,31 +89,85 @@ public class GameAI_Ex2_Diver1 extends AI {
 			pearlArray[nearestPearlIndex] = null;
 			nearestPearl = findNearestPearl(pearlArray);
 			playerDirection = calculateDirectionToPoint(nearestPearl);
+			
+			nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
+			begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
+			end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
+			begin.setDistance(0);
+			visitNext.add(begin);
+			end.setVisited(false);
+			//nearestPearl = findNearestPearl(pearlArray); // closest always
+//			playerDirection = calculateDirectionToPoint(nearestPearl);
+			pathToFollow = calculateDijkstraPath();
+			nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
+			nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
+			pathToFollow.remove(0);
+			playerDirection = calculateDirectionToPoint(nextAim);
 		}
+		
 		
 		// Finds the closest pearl
 //		
 //		if (detectCollision(playerDirection)) {
 //			playerDirection = avoidObstacle(obstacles[obstacleIndex], playerDirection);
 //		} else {
-			playerDirection = calculateDirectionToPoint(nearestPearl);
 //		}
-		
+		if (!pathToFollow.isEmpty()) {
+			if (nextAim.distanceSq(info.getX(), info.getY()) < 10) {
+				nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
+				nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
+				pathToFollow.remove(0);
+				playerDirection = calculateDirectionToPoint(nextAim);
+			}
+		} else {
+			playerDirection = calculateDirectionToPoint(nearestPearl);
+		}
+			
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
 	
 	@Override
 	public void drawDebugStuff(Graphics2D gfx) {
 		// Draw red oval at aim
-		gfx.setColor(Color.red);
+		gfx.setColor(Color.yellow);
 		gfx.drawOval(nearestPearl.x-4, nearestPearl.y-4, 8, 8);
 		
 		// Draw green ovals in freespace
 		gfx.setColor(Color.green);
-		for (int i = 0; i < freespaceMatrix.length; i++) {
-			for (int j = 0; j < freespaceMatrix[i].length; j++) {
+		
+		double cos = Math.cos(playerDirection);
+		double sin = Math.sin(playerDirection);
+		
+		double cosL = Math.cos(playerDirection+Math.PI/4);
+		double sinL = Math.sin(playerDirection+Math.PI/4);
+		
+		double cosR = Math.cos(playerDirection-Math.PI/4);
+		double sinR = Math.sin(playerDirection-Math.PI/4);
+		
+		Point collisionPoint = new Point();
+		collisionPoint.x = (int) (info.getX() + cos * CELL_SIZE);
+		collisionPoint.y = (int) (info.getY() - sin * CELL_SIZE);
+		
+		Point collisionPointL = new Point();
+		collisionPointL.x = (int) (info.getX() + cosL * CELL_SIZE);
+		collisionPointL.y = (int) (info.getY() - sinL * CELL_SIZE);
+		
+		Point collisionPointR = new Point();
+		collisionPointR.x = (int) (info.getX() + cosR * CELL_SIZE);
+		collisionPointR.y = (int) (info.getY() - sinR * CELL_SIZE);
+		
+		gfx.drawOval(collisionPoint.x-5, collisionPoint.y-5, 10, 10);
+		
+		gfx.drawOval(collisionPointL.x-5, collisionPointL.y-5, 10, 10);
+		gfx.drawOval(collisionPointR.x-5, collisionPointR.y-5, 10, 10);
+		
+		gfx.setColor(Color.white);
+		gfx.drawOval((int) (nextAim.x / CELL_SIZE) * CELL_SIZE+ 20, (int) (nextAim.y / CELL_SIZE) *CELL_SIZE + 20, 10, 10);
+		
+		for (int i = 0; i < nodesMatrix.length; i++) {
+			for (int j = 0; j < nodesMatrix[i].length; j++) {
 				// Test overlay
-				/*if (freespaceMatrix[i][j]) {
+				if (!nodesMatrix[i][j].isVisited()) {
 					gfx.setColor(Color.green);
 //					gfx.drawOval(i*CELL_SIZE+CELL_SIZE*2/5, j*CELL_SIZE+CELL_SIZE*2/5, CELL_SIZE/5, CELL_SIZE/5);
 					gfx.drawOval(i*CELL_SIZE, j*CELL_SIZE, CELL_SIZE, CELL_SIZE);
@@ -104,7 +176,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 //					gfx.drawOval(i*CELL_SIZE+CELL_SIZE*2/5, j*CELL_SIZE+CELL_SIZE*2/5, CELL_SIZE/5, CELL_SIZE/5);
 					gfx.drawRect(i*CELL_SIZE+5, j*CELL_SIZE+5, CELL_SIZE-10, CELL_SIZE-10);
 
-				}*/
+				}
 			}
 		}
 	}
@@ -180,6 +252,73 @@ public class GameAI_Ex2_Diver1 extends AI {
 	
 	
 	
+	private ArrayList<Node> calculateDijkstraPath() {
+//		System.a
+		Node visiting = visitNext.get(0);
+		visitNext.remove(0);
+		int x = visiting.getX();
+		int y = visiting.getY();
+		int currentDirX = Integer.signum(end.getX() - begin.getX());
+		int currentDirY = Integer.signum(end.getY() - begin.getY());
+		
+		while(!end.isVisited()) {
+			nodesMatrix[x][y].setVisited(true);
+			outerLoop: for (int i = -1; i <= 1; i++) {
+				if (x + i < 0 || x + i >= nodesMatrix.length) {
+					continue outerLoop;
+				}
+				innerLoop: for (int j = -1; j <= 1; j++) {
+					if (y + j < 0 || y + j >= nodesMatrix[0].length || (i == 0 && j == 0)) {
+						continue innerLoop;
+					}
+					if (!nodesMatrix[x + i][y + j].isVisited()) {
+						// Calculate check priority according to direction and node relative position
+						if (currentDirX == Integer.signum(nodesMatrix[x + i][y + j].getX() - visiting.getX())) {
+							if (currentDirY == Integer.signum(nodesMatrix[x + i][y + j].getY() - visiting.getY())) {
+								// Favor nodes if they are in the same direction both ways
+								visitNext.add(0, nodesMatrix[x + i][y + j]);
+								continue innerLoop;
+							} /*else {
+								// partly favor one direction
+								visitNext.add(visitNext.size()/4, nodesMatrix[x + i][y + j]);
+							}
+						} else {
+							if (currentDirY == Integer.signum(nodesMatrix[x + i][y + j].getY() - visiting.getY())) {
+								// partly favor one direction
+								visitNext.add(visitNext.size()/2, nodesMatrix[x + i][y + j]);
+							} else {
+								// Check opposite directed nodes last, if at all
+								visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
+							}*/
+						}
+						visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
+						if (nodesMatrix[x + i][y + j].getDistance() > visiting.getDistance()+1) {
+							nodesMatrix[x + i][y + j].setDistance(visiting.getDistance()+1);
+							nodesMatrix[x + i][y + j].setPrevious(visiting);
+						}
+					}
+				}
+			}
+			if (!visitNext.isEmpty()) {
+				visiting=visitNext.get(0);
+				visitNext.remove(0);
+				x = visiting.getX();
+				y = visiting.getY();
+			}
+		}
+		visitNext.clear();
+		ArrayList<Node> temp = new ArrayList<>();
+		temp.add(end); // Skip last, same as pearl, obsolete
+		
+		while(temp.get(0).getPrevious() != null) {
+			temp.add(0, temp.get(0).getPrevious());
+		}
+		temp.remove(0); // remove first, it's the player position = obsolete
+		return temp;
+	}
+	
+	
+	
 	/**
 	 * Calculates a direction to a certain Point, from player position.
 	 * 
@@ -200,11 +339,11 @@ public class GameAI_Ex2_Diver1 extends AI {
 	 * Calculates an adjacency matrix to use with a pathfinding algorithm
 	 * 
 	 * @param width		Width of part to check
-	 * @param height	Height of part to check
+	 * @aparam height	Height of part to check
 	 * @return			A boolean adjacency matrix
 	 */
-	private boolean[][] calculateIntersections(int width, int height) {
-		boolean[][] tempArray = new boolean[width/CELL_SIZE][height/CELL_SIZE];
+	private Node[][] calculateIntersections(int width, int height) {
+		Node[][] tempArray = new Node[width/CELL_SIZE][height/CELL_SIZE];
 		Rectangle rect = new Rectangle();
 		
 		for (int x = 0; x < width/CELL_SIZE; x++) {
@@ -217,12 +356,13 @@ public class GameAI_Ex2_Diver1 extends AI {
 						
 						/* If ANY intersection is found, skip this position
 						   as it is not passable keep it false */
+						tempArray[x][y] = new Node (null, Integer.MAX_VALUE, true, x, y);
 						continue innerLoop;
 					}
 				}
 				
 				// Only if it doesn't intersect any, path is free
-				tempArray[x][y] = true;
+				tempArray[x][y] = new Node (null, Integer.MAX_VALUE, false, x, y);
 			}
 		}
 		return tempArray;
