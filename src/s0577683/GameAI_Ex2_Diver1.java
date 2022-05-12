@@ -6,8 +6,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+
 
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;
@@ -15,7 +14,7 @@ import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
 public class GameAI_Ex2_Diver1 extends AI {
-	private final int CELL_SIZE = 10;
+	private final int CELL_SIZE = 25;
 	
 	//Complex Types
 	private ArrayList<Node> visitNext = new ArrayList<>();
@@ -31,7 +30,6 @@ public class GameAI_Ex2_Diver1 extends AI {
 	//Primitive Types
 	private int currentScore;
 	private int nearestPearlIndex;
-	private int obstacleIndex;
 	private int sceneHeight;
 	private int sceneWidth;
 	private float playerDirection;
@@ -48,8 +46,8 @@ public class GameAI_Ex2_Diver1 extends AI {
 		sceneHeight = info.getScene().getHeight();
 		sceneWidth = info.getScene().getWidth();
 		//Get calculated values
-		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
-//		nearestPearl = findNearestPearl(pearlArray); // closest always
+//		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
+		nearestPearl = findNearestPearl(pearlArray); // closest always
 		nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
 		end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
@@ -90,6 +88,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 			nearestPearl = findNearestPearl(pearlArray);
 			playerDirection = calculateDirectionToPoint(nearestPearl);
 			
+			// Reset Matrix
 			nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 			begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
 			end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
@@ -113,7 +112,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 //		} else {
 //		}
 		if (!pathToFollow.isEmpty()) {
-			if (nextAim.distanceSq(info.getX(), info.getY()) < 10) {
+			if (nextAim.distanceSq(info.getX(), info.getY()) < CELL_SIZE) {
 				nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
 				nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
 				pathToFollow.remove(0);
@@ -126,7 +125,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
 	
-	@Override
+	/*@Override
 	public void drawDebugStuff(Graphics2D gfx) {
 		// Draw red oval at aim
 		gfx.setColor(Color.yellow);
@@ -179,7 +178,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 				}
 			}
 		}
-	}
+	}*/
 	
 	
 	
@@ -277,8 +276,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 							if (currentDirY == Integer.signum(nodesMatrix[x + i][y + j].getY() - visiting.getY())) {
 								// Favor nodes if they are in the same direction both ways
 								visitNext.add(0, nodesMatrix[x + i][y + j]);
-								continue innerLoop;
-							} /*else {
+							} else {
 								// partly favor one direction
 								visitNext.add(visitNext.size()/4, nodesMatrix[x + i][y + j]);
 							}
@@ -289,9 +287,9 @@ public class GameAI_Ex2_Diver1 extends AI {
 							} else {
 								// Check opposite directed nodes last, if at all
 								visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
-							}*/
+							}
 						}
-						visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
+
 						if (nodesMatrix[x + i][y + j].getDistance() > visiting.getDistance()+1) {
 							nodesMatrix[x + i][y + j].setDistance(visiting.getDistance()+1);
 							nodesMatrix[x + i][y + j].setPrevious(visiting);
@@ -379,24 +377,24 @@ public class GameAI_Ex2_Diver1 extends AI {
 	 */
 	private Point findLeftmostPearl(Point[] pearls) {
 		
+		Point closest = null;
 		int minimumDistance = Integer.MAX_VALUE;
 		int index = 0;
 		
 		// Check all pearls
 		for (Point pearl : pearls) {
 			
-			int pearlPosX = pearl.x;
-			
 			// A closer pearl is found, update all
-			if (pearlPosX < minimumDistance) {
-				minimumDistance = pearlPosX;
+			if (pearl.x < minimumDistance) {
+				minimumDistance = pearl.x;
+				closest = pearl;
 				nearestPearlIndex = index;
 			}
 			++index;
 		}
 		
 		// Updates index for removal and returns the closest Point
-		return pearls[nearestPearlIndex];
+		return closest;
 	}
 	
 	
@@ -410,9 +408,9 @@ public class GameAI_Ex2_Diver1 extends AI {
 	 */
 	private Point findNearestPearl(Point[] pearls) {
 		
+		Point closest = null;
 		double minimumDistance = Double.MAX_VALUE;
 		int index = 0;
-		
 		// Check all pearls
 		for (Point pearl : pearls) {
 			
@@ -427,13 +425,14 @@ public class GameAI_Ex2_Diver1 extends AI {
 			// A closer pearl is found, update all
 			if (currentPearlDistance < minimumDistance) {
 				minimumDistance = currentPearlDistance;
+				closest = pearl;
 				nearestPearlIndex = index;
 			}
 			++index;
 		}
 		
 		// Updates index for removal and returns the closest Point
-		return pearls[nearestPearlIndex];
+		return closest;
 	}
 	
 	
@@ -445,15 +444,12 @@ public class GameAI_Ex2_Diver1 extends AI {
 	 */
 	private boolean detectCollision(float playerDirection) {
 		
-		int index = 0;
 		Point mainCollisionPoint = calculateCollisionPoint(10, playerDirection);
 		
 		for (Path2D obstacle : obstacleArray) {
 			if (obstacle.contains(mainCollisionPoint)) {
-				obstacleIndex = index;
 				return true;
 			}
-			index++;
 		}
 		
 		return false;
