@@ -14,7 +14,7 @@ import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
 public class GameAI_Ex2_Diver1 extends AI {
-	private final int CELL_SIZE = 25;
+	private final int CELL_SIZE = 15;
 	
 	//Complex Types
 	private ArrayList<Node> visitNext = new ArrayList<>();
@@ -46,11 +46,11 @@ public class GameAI_Ex2_Diver1 extends AI {
 		sceneHeight = info.getScene().getHeight();
 		sceneWidth = info.getScene().getWidth();
 		//Get calculated values
-//		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
-		nearestPearl = findNearestPearl(pearlArray); // closest always
+		nearestPearl = findLeftmostPearl(pearlArray); // Get left to right
+//		nearestPearl = findNearestPearl(pearlArray); // closest always
 		nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
-		end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
+		end = nodesMatrix[(nearestPearl.x / CELL_SIZE)-1][(nearestPearl.y / CELL_SIZE)];
 		begin.setDistance(0);
 		visitNext.add(begin);
 		end.setVisited(false);
@@ -84,14 +84,17 @@ public class GameAI_Ex2_Diver1 extends AI {
 		// Detects if a pearl is collected
 		if (info.getScore() != currentScore) {
 			currentScore = info.getScore();
+			// If by chance a pearl is collected, remove this instead
+			nearestPearl = findNearestPearl(pearlArray);
 			pearlArray[nearestPearlIndex] = null;
+			// Then recalculate the path
 			nearestPearl = findNearestPearl(pearlArray);
 			playerDirection = calculateDirectionToPoint(nearestPearl);
 			
 			// Reset Matrix
 			nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 			begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
-			end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
+			end = nodesMatrix[(nearestPearl.x / CELL_SIZE)-1][(nearestPearl.y / CELL_SIZE)];
 			begin.setDistance(0);
 			visitNext.add(begin);
 			end.setVisited(false);
@@ -252,7 +255,6 @@ public class GameAI_Ex2_Diver1 extends AI {
 	
 	
 	private ArrayList<Node> calculateDijkstraPath() {
-//		System.a
 		Node visiting = visitNext.get(0);
 		visitNext.remove(0);
 		int x = visiting.getX();
@@ -383,6 +385,11 @@ public class GameAI_Ex2_Diver1 extends AI {
 		
 		// Check all pearls
 		for (Point pearl : pearls) {
+			//If it is already collected, ignore it and get next
+			if (pearl == null) {
+				++index;
+				continue;
+			}
 			
 			// A closer pearl is found, update all
 			if (pearl.x < minimumDistance) {
