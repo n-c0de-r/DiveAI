@@ -1,12 +1,11 @@
 package s0577683;
 
 /**
- * Class creating Vertices. Each storing their name
- * the previous vertex in the path and distance to it.
+ * Class creating Nodes. Each storing their position
+ * the previous node in the path and distance to it.
  * 
  * @author	n-c0de-r
- * @author	AlexanderStae
- * @version	11.07.2021
+ * @version	17.05.2022
  */
 public class Node {
 
@@ -17,11 +16,11 @@ public class Node {
 	private int y;
 	
 	/**
-	 * Full constructor of the Vertex class.
+	 * Full constructor of the Node class.
 	 * 
-	 * @param prev	Contains the previous neighboring Vertex.
-	 * @param dist	The minimum distance to this Vertex.
-	 * @param visit	Boolean if the Vertex is visited.
+	 * @param prev	Contains the previous neighboring Node.
+	 * @param dist	The minimum distance to this Node.
+	 * @param visit	Boolean if the Node is visited.
 	 */
 	public Node (Node prev, int dist, boolean visit, int posX, int posY) {
 		previous = prev;
@@ -32,15 +31,15 @@ public class Node {
 	}
 	
 	/**
-	 * Get the vertex's previous neighbor.
-	 * @return Vertex which came before.
+	 * Get the node's previous neighbor.
+	 * @return Node which came before.
 	 */
 	public Node getPrevious() {
 		return previous;
 	}
 	
 	/**
-	 * Get the distance to this vertex.
+	 * Get the distance to this node.
 	 * @return Integer value of distance.
 	 */
 	public int getDistance() {
@@ -48,7 +47,7 @@ public class Node {
 	}
 	
 	/**
-	 * Get the X coordinate to this vertex.
+	 * Get the X coordinate to this node.
 	 * @return Integer value of X coordinate.
 	 */
 	public int getX() {
@@ -56,7 +55,7 @@ public class Node {
 	}
 	
 	/**
-	 * Get the Y coordinate to this vertex.
+	 * Get the Y coordinate to this node.
 	 * @return Integer value of Y coordinate.
 	 */
 	public int getY() {
@@ -64,23 +63,23 @@ public class Node {
 	}
 	
 	/**
-	 * Get the visited status of this vertex.
-	 * @return Visited status of the Vertex.
+	 * Get the visited status of this node.
+	 * @return Visited status of the Node.
 	 */
 	public boolean isVisited() {
 		return visited;
 	}
 	
 	/**
-	 * Set the neighboring vertex to this one.
-	 * @param prev	Vertex that came before.
+	 * Set the neighboring node to this one.
+	 * @param prev	Node that came before.
 	 */
 	public void setPrevious(Node prev) {
 		previous = prev;
 	}
 	
 	/**
-	 * Set the shortest distance to this vertex.
+	 * Set the shortest distance to this node.
 	 * @param dist	Integer value of shortest distance.
 	 */
 	public void setDistance(int dist) {
@@ -88,8 +87,8 @@ public class Node {
 	}
 	
 	/**
-	 * Set the visited status of this vertex.
-	 * @param visit	Set if this Vertex was visited.
+	 * Set the visited status of this node.
+	 * @param visit	Set if this Node was visited.
 	 */
 	public void setVisited(boolean visit) {
 		visited = visit;
