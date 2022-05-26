@@ -272,17 +272,15 @@ public class GameAI_Ex2_Diver1 extends AI {
 					}
 					if (!nodesMatrix[x + i][y + j].isVisited()) {
 						if (!visitNext.contains(nodesMatrix[x + i][y + j])) {
-						
-								visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
-							//}
-						}
-						}
-						if (nodesMatrix[x + i][y + j].getDistance() > visiting.getDistance()+1) {
-							nodesMatrix[x + i][y + j].setDistance(visiting.getDistance()+1);
-							nodesMatrix[x + i][y + j].setPrevious(visiting);
+							visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
 						}
 					}
+					if (nodesMatrix[x + i][y + j].getDistance() > visiting.getDistance()+1) {
+						nodesMatrix[x + i][y + j].setDistance(visiting.getDistance()+1);
+						nodesMatrix[x + i][y + j].setPrevious(visiting);
+					}
 				}
+			}
 			
 			// Get the next node to check
 			if (!visitNext.isEmpty()) {
