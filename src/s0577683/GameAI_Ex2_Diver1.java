@@ -259,46 +259,32 @@ public class GameAI_Ex2_Diver1 extends AI {
 		visitNext.remove(0);
 		int x = visiting.getX();
 		int y = visiting.getY();
-		int currentDirX = Integer.signum(end.getX() - begin.getX());
-		int currentDirY = Integer.signum(end.getY() - begin.getY());
 		
 		while(!end.isVisited()) {
 			nodesMatrix[x][y].setVisited(true);
-			outerLoop: for (int i = -1; i <= 1; i++) {
+			for (int i = -1; i <= 1; i++) {
 				if (x + i < 0 || x + i >= nodesMatrix.length) {
-					continue outerLoop;
+					continue;
 				}
-				innerLoop: for (int j = -1; j <= 1; j++) {
+				for (int j = -1; j <= 1; j++) {
 					if (y + j < 0 || y + j >= nodesMatrix[0].length || (i == 0 && j == 0)) {
-						continue innerLoop;
+						continue;
 					}
 					if (!nodesMatrix[x + i][y + j].isVisited()) {
-						// Calculate check priority according to direction and node relative position
-						if (currentDirX == Integer.signum(nodesMatrix[x + i][y + j].getX() - visiting.getX())) {
-							if (currentDirY == Integer.signum(nodesMatrix[x + i][y + j].getY() - visiting.getY())) {
-								// Favor nodes if they are in the same direction both ways
-								visitNext.add(0, nodesMatrix[x + i][y + j]);
-							} else {
-								// partly favor one direction
-								visitNext.add(visitNext.size()/4, nodesMatrix[x + i][y + j]);
-							}
-						} else {
-							if (currentDirY == Integer.signum(nodesMatrix[x + i][y + j].getY() - visiting.getY())) {
-								// partly favor one direction
-								visitNext.add(visitNext.size()/2, nodesMatrix[x + i][y + j]);
-							} else {
-								// Check opposite directed nodes last, if at all
+						if (!visitNext.contains(nodesMatrix[x + i][y + j])) {
+						
 								visitNext.add(visitNext.size(), nodesMatrix[x + i][y + j]);
-							}
+							//}
 						}
-
+						}
 						if (nodesMatrix[x + i][y + j].getDistance() > visiting.getDistance()+1) {
 							nodesMatrix[x + i][y + j].setDistance(visiting.getDistance()+1);
 							nodesMatrix[x + i][y + j].setPrevious(visiting);
 						}
 					}
 				}
-			}
+			
+			// Get the next node to check
 			if (!visitNext.isEmpty()) {
 				visiting=visitNext.get(0);
 				visitNext.remove(0);
@@ -306,9 +292,10 @@ public class GameAI_Ex2_Diver1 extends AI {
 				y = visiting.getY();
 			}
 		}
+		
 		visitNext.clear();
 		ArrayList<Node> temp = new ArrayList<>();
-		temp.add(end); // Skip last, same as pearl, obsolete
+		temp.add(end.getPrevious()); // Skip last, same as pearl, obsolete
 		
 		while(temp.get(0).getPrevious() != null) {
 			temp.add(0, temp.get(0).getPrevious());
