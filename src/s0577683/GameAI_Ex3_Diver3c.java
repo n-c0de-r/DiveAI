@@ -89,24 +89,30 @@ public class GameAI_Ex3_Diver3c extends AI {
 
 	@Override
 	public PlayerAction update() {
+		// TODO: Lots of code duplication. calls for refactoring!
 		
+		// IF you are following a path, do this
 		if (!pathToFollow.isEmpty()) {
 			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
 				nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
 				nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
 				pathToFollow.remove(0);
 				playerDirection = calculateDirectionToPoint(nextAim);
-			}
-		} else { // Arrived at final node
-			playerDirection = calculateDirectionToPoint(nearestPearl);
+			}// Arrived at final node
+		} else { 
 			// Swim to pearl
+			playerDirection = calculateDirectionToPoint(nearestPearl);
+			
 			if (info.getScore() != currentScore) { // Pearl is collected
 				currentScore = info.getScore();
-				// If by chance a pearl is collected, remove this instead
+				// If pearl is collected by chance, but path is still not done,
+				//remove this pearl instead and continue your way
 				nearestPearl = findNearestPearl(pearlArray);
 				pearlArray[nearestPearlIndex] = null;
 				
 				nearestPearl = findNearestPearl(pearlArray);
+				// If you still have air, and the next one is really close,
+				// Use Pathfinding to get it while you are there
 				if (nearestPearl.distance(info.getX(), info.getY()) < 100 && info.getAir() > info.getMaxAir()/2) {
 					nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 					begin = nodesMatrix[(int) info.getX() / CELL_SIZE][(int) info.getY() / CELL_SIZE];
@@ -119,11 +125,16 @@ public class GameAI_Ex3_Diver3c extends AI {
 					nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
 					playerDirection = calculateDirectionToPoint(nextAim);
 				} else {
-					dive=false; // We want to surface
+					// Otherwise play safe and resurface
+					dive=false;
+					
+					//Check if there are collisions on the way up
 					Point first = calculateCollisionPoint((int) info.getX(), (int) info.getY());
 					
+					// If not, just swimm straight upwards
 					if (first == null) {
 						nearestPearl = new Point((int) info.getX(), 0);
+						// Otherwise avoid the obstacle with "pathfinding"
 					} else {
 						// Reset Matrix to find next aim
 						nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
@@ -140,19 +151,28 @@ public class GameAI_Ex3_Diver3c extends AI {
 						playerDirection = calculateDirectionToPoint(nextAim);
 					}
 				}
-
-				
 			}
+			// We collected a pearl and there's no other nearby,
+			// So resurface until you have full air!
 			else if (!dive && info.getAir() == info.getMaxAir()) {
+				// Find your next aim
 				nearestPearl = findTopmostPearl(pearlArray);
 				
+				// Check if there is a collision on the way to it
 				Point first = calculateCollisionPoint(nearestPearl.x, nearestPearl.y);
+				
+				// If it's a straight line
 				if (first == null) {
+					// Set it as a goal
 					pathToFollow.add(0, nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)]);
+					// But before that, swim to the surface point right above it
 					nextAim.x = nearestPearl.x;
 					nextAim.y = 0;
+					// Swim straight down!
 					playerDirection = calculateDirectionToPoint(nextAim);
+					
 				} else {
+					// If there are obstacles, use "pathfinding"
 					nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 					begin = nodesMatrix[(int) info.getX() / CELL_SIZE][(int) info.getY() / CELL_SIZE];
 					end = nodesMatrix[(nearestPearl.x / CELL_SIZE)][(nearestPearl.y / CELL_SIZE)];
@@ -164,12 +184,10 @@ public class GameAI_Ex3_Diver3c extends AI {
 					nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
 					playerDirection = calculateDirectionToPoint(nextAim);
 				}
+				// We are done with "surfacing" and want to dive again
 				dive=true;
 			}
-		} 
-			
-		return new DivingAction(info.getMaxAcceleration(), playerDirection);
-	}
+		}
 	
 	
 	
