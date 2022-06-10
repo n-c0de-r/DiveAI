@@ -13,7 +13,7 @@ import lenz.htw.ai4g.ai.DivingAction;
 import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
-public class GameAI_Ex3_Diver3c extends AI {
+public class GameAI_Ex4_Diver1 extends AI {
 	private final int CELL_SIZE = 15;
 	
 	//Complex Types
@@ -35,8 +35,10 @@ public class GameAI_Ex3_Diver3c extends AI {
 	private int sceneWidth;
 	private float playerDirection;
 	
-	public GameAI_Ex3_Diver3c (Info info) {
+	public GameAI_Ex4_Diver1 (Info info) {
 		super(info);
+		
+		enlistForTournament(577683, 577423);
 		
 		//Get initial values 
 		currentScore = 0;
