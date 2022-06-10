@@ -89,7 +89,7 @@ public class GameAI_Ex3_Diver3c extends AI {
 	public PlayerAction update() {
 		// TODO: Lots of code duplication. calls for refactoring!
 		
-		// IF you are following a ath, do this
+		// IF you are following a path, do this
 		if (!pathToFollow.isEmpty()) {
 			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
 				nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
