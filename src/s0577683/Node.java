@@ -21,6 +21,8 @@ public class Node {
 	 * @param prev	Contains the previous neighboring Node.
 	 * @param dist	The minimum distance to this Node.
 	 * @param visit	Boolean if the Node is visited.
+	 * @param posX	X coordinate of the node
+	 * @param posY	Y coordinate of the node
 	 */
 	public Node (Node prev, int dist, boolean visit, int posX, int posY) {
 		previous = prev;
@@ -28,6 +30,13 @@ public class Node {
 		visited = visit;
 		x = posX;
 		y = posY;
+	}
+	
+	/**
+	 * Position bound constructor of the Node class.
+	 */
+	public Node (int posX, int posY) {
+		this(null, 1, true, posX, posY);
 	}
 	
 	/**
