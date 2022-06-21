@@ -4,10 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;
@@ -23,8 +21,6 @@ public class GameAI_Ex4_Diver1 extends AI {
 	private ArrayList<Node> pathToFollow;
 	private ArrayList<ShoppingItem> boughtItems;
 	private Path2D[] obstacleArray;
-	private Point nearestPearl;
-	private Point nearestBottle;
 	private Point nextAim;
 	private Point shipPosition;
 	private Point[] pearlArray;
@@ -32,8 +28,6 @@ public class GameAI_Ex4_Diver1 extends AI {
 	
 	//Primitive Types
 	private boolean isDiving;
-	private boolean isShopping;
-	private boolean haveSurfacePearls;
 	private int currentScore;
 	private int currentMoney;
 	private int sceneHeight;
@@ -68,99 +62,31 @@ public class GameAI_Ex4_Diver1 extends AI {
 
 	@Override
 	public PlayerAction update() {
-		if (info.getMoney() != currentMoney || info.getScore() != currentScore) {
-			makeDecision();
-		}
+		// Something got picked up
+		updateNumbers();
 		
-
-		if (Math.abs(info.getX() - shipPosition.x) < CELL_SIZE
-				&& Math.abs(info.getY() - shipPosition.y) < CELL_SIZE 
-				&& currentMoney != 0){
-			currentMoney = 0;
-			makeDecision();
-			isShopping = false;
+		// If you have money and are close to ship, buy something
+		if (isCloseToShip() && currentMoney >= 2 && boughtItems.size() <4){
 			return new ShoppingAction(buyItem());
 		}
 		
-		// IF you are following a path, do this
-		if (!pathToFollow.isEmpty()) {
-			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
-				Node node = pathToFollow.remove(0);
-				nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
-				nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
-				
-				playerDirection = calculateDirectionToPoint(nextAim);
-			}// Arrived at final node
-		
-		} else {
-			makeDecision();
-		}
-		
-		/*else { 
-			// Swim to pearl
-			playerDirection = calculateDirectionToPoint(nearestPearl);
-			
-			if (info.getScore() != currentScore) { // Pearl is collected
-				currentScore = info.getScore();
-				// If pearl is collected by chance, but path is still not done,
-				//remove this pearl instead and continue your way to the next
-				removeNearestPoint(pearlArray);
-				nearestPearl = findNearestPoint(pearlArray);
-				
-				// If you still have air, and the next one is really close,
-				// Use Pathfinding to get it while you are there
-				if (nearestPearl.distance(info.getX(), info.getY()) < 100 && info.getAir() > info.getMaxAir()/2) {
-					pathToFollow = calculateDijkstraPath(new Point((int)info.getX(), (int)info.getY()), nearestPearl);
-					nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
-					nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
-					playerDirection = calculateDirectionToPoint(nextAim);
-				} else {
-					// Otherwise play safe and resurface straight up
-					isDiving=false;
-					nearestPearl = new Point((int) info.getX(), 0);
-					
-					//Check if there are collisions on the way up
-					Point first = calculateCollisionPoint((int) info.getX(), (int) info.getY());
-					if (first != null) {
-						// avoid the obstacle with "pathfinding"
-						pathToFollow = calculateDijkstraPath(first, nearestPearl);
-						nextAim.x = first.x;
-						nextAim.y = first.y;
-						playerDirection = calculateDirectionToPoint(nextAim);
-					}
+//		makeDecision();
+//		if (isDiving) {
+//			
+//			// IF you are following a path, continue it and do this
+			if (!pathToFollow.isEmpty()) {
+				if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
+					Node node = pathToFollow.remove(0);
+					nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
+					nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
+					playerDirection = calculateDirectionToPoint(new Point((int)info.getX(),(int)info.getY()), nextAim);
 				}
+			} else {
+				makeDecision();
 			}
-			// We collected a pearl and there's no other nearby,
-			// So resurface until you have full air!
-			else if (!isDiving && info.getAir() == info.getMaxAir()) {
-				// Find your next aim
-				nearestPearl = findNearestPoint(pearlArray);
-				
-				// Check if there is a collision on the way to it
-				Point first = calculateCollisionPoint(nearestPearl.x, nearestPearl.y);
-				
-				// If it's a straight line
-				if (first == null) {
-					// Set it as a goal
-					pathToFollow.add(0, new Node(nearestPearl.x / CELL_SIZE, nearestPearl.y / CELL_SIZE));
-					// But before that, swim to the surface point right above it
-					nextAim.x = nearestPearl.x;
-					nextAim.y = 0;
-					// Swim straight down!
-					playerDirection = calculateDirectionToPoint(nextAim);
-					
-				} else {
-					// If there are obstacles, use "pathfinding"
-					pathToFollow = calculateDijkstraPath(new Point((int)info.getX(), (int)info.getY()), nearestPearl);
-					nextAim.x = pathToFollow.get(0).getX() * CELL_SIZE + CELL_SIZE/2;
-					nextAim.y = pathToFollow.get(0).getY() * CELL_SIZE + CELL_SIZE/2;
-					playerDirection = calculateDirectionToPoint(nextAim);
-				}
-				// We are done with "surfacing" and want to dive again
-				isDiving=true;
-			}
-		}
-		*/
+//		} else {
+//			makeDecision();
+//		}
 			
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
@@ -169,14 +95,176 @@ public class GameAI_Ex4_Diver1 extends AI {
 	
 	//---------------------Helper Methods-----------------------------
 	
+	// Returning void
+	/**
+	 * Decide if you swim to an aim directly or with pathfinding
+	 * @param from	Point where to start swimming.
+	 * @param to	Point to swim to.
+	 */
+	private void directSwimOrPath(Point from, Point to) {
+		// Check for collision
+		Point collisionPoint = calculateCollision(from,to);
+		// If there's IS one, get the path to the pearl
+		if (collisionPoint != null) {
+			pathToFollow = calculateDijkstraPath(from, collisionPoint);
+			pathToFollow.add(new Node(to.x/CELL_SIZE, to.y / CELL_SIZE));
+//			pathToFollow = smoothPath(pathToFollow);
+			Node node = pathToFollow.remove(0);
+			nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
+			nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
+			playerDirection = calculateDirectionToPoint(new Point((int)info.getX(),(int)info.getY()), nextAim);
+		} else {
+			// If there's no collision dive straight through
+			playerDirection = calculateDirectionToPoint(from, to);
+		}
+	}
 	
 	
+	
+	/**
+	 * Initialize starting variables.
+	 */
+	private void init() {
+		currentScore = 0;
+		currentMoney = 0;
+		isDiving = true;
+		nextAim = new Point();
+		boughtItems = new ArrayList<>();
+		pathToFollow = new ArrayList<>();
+		bottleArray = info.getScene().getRecyclingProducts();
+		obstacleArray = info.getScene().getObstacles();
+		pearlArray = info.getScene().getPearl();
+		sceneHeight = info.getScene().getHeight();
+		sceneWidth = info.getScene().getWidth();
+		shipPosition = new Point(info.getScene().getShopPosition(), 0);
+	}
+	
+	
+	
+	/**
+	 * Some crappy decision making function.
+	 * @return 
+	 */
+	private void makeDecision() {
+		// If no items yet buy supplies first
+		if (boughtItems.size() < 4) {
+			// Not enough money yet
+			if (currentMoney < 2) {
+				nextAim = findNearestPoint(bottleArray);
+			} else {
+				nextAim = shipPosition;
+			}
+		} else {
+			nextAim = findNearestPoint(pearlArray);
+		}
+		
+		// If you don't have enough air or just resurfaces, change your state
+		if ((info.getAir() < info.getMaxAir() * 1/3) && isDiving) {
+			isDiving = false;
+			nextAim = new Point((int) info.getX(), 0);
+		}
+		
+		if (info.getAir() == info.getMaxAir() && !isDiving){
+			isDiving = true;
+			nextAim = findNearestPoint(pearlArray);
+		}
+		
+		directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
+	}
+	
+	
+	
+	/**
+	 * Finds the point closest to the player and removes it.
+	 * @param points	The array of points to look over.
+	 */
+	private void removeNearestPoint(Point[] points) {
+		
+		double minimumDistance = Double.MAX_VALUE;
+		int nearestIndex = 0;
+		int index = 0;
+		// Check all points
+		for (Point point : points) {
+			
+			//If it is already collected, ignore it and get next
+			if (point == null) {
+				++index;
+				continue;
+			}
+			
+			double currentPearlDistance = point.distance(info.getX(), info.getY());
+			
+			// A closer point is found, update
+			if (currentPearlDistance < minimumDistance) {
+				minimumDistance = currentPearlDistance;
+				nearestIndex = index;
+			}
+			++index;
+		}
+		
+		points[nearestIndex] = null;
+	}
+	
+	
+	
+	private void updateNumbers() {
+		if (info.getScore() != currentScore) {
+			currentScore = info.getScore();
+			removeNearestPoint(pearlArray);
+			
+		}
+		
+		if (info.getMoney() > currentMoney) {
+			currentMoney = info.getMoney();
+			if(!isCloseToShip()) {
+				removeNearestPoint(bottleArray);
+			}
+		}
+	}
+	
+	
+	
+	// Returning primitives
+	/**
+	 * Calculates distance to ship, relevant to buying items
+	 * @return		true, if you are very close
+	 */
+	private boolean isCloseToShip() {
+		return Math.abs(info.getX() - shipPosition.x) < CELL_SIZE
+		&& Math.abs(info.getY() - shipPosition.y) < CELL_SIZE;
+	}
+	
+	
+	
+	/**
+	 * Calculates a direction to a certain Point, from player position.
+	 * @param from	Point to calculate direction from.
+	 * @param to	Point to calculate the direction to.
+	 * @return
+	 */
+	private float calculateDirectionToPoint(Point from, Point to) {
+		
+		double distanceX = to.x - from.x;
+		double distanceY = to.y - from.y;
+		
+		return (float) -Math.atan2(distanceY, distanceX);
+	}
+	
+	
+	
+	// Returning Complex types
+	/**
+	 * Calculates a path to follow, with an adjacency matrix and the Dijkstra algorithm
+	 * @param from	Point where we start the pathfinding
+	 * @param to	Point where we want to go to
+	 * @return		ArrayList of Nodes to follow step by step
+	 */
 	private ArrayList<Node> calculateDijkstraPath(Point from, Point to) {
 		Node[][] nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		ArrayList<Node> visitNext = new ArrayList<>();
 
 		Node begin = nodesMatrix[from.x / CELL_SIZE][from.y / CELL_SIZE];
-		Node end = nodesMatrix[(to.x / CELL_SIZE)][(to.y / CELL_SIZE)];
+		Node end = nodesMatrix[(to.x / CELL_SIZE)-1][(to.y / CELL_SIZE)];
 
 		begin.setDistance(0);
 		visitNext.add(begin);
@@ -208,6 +296,7 @@ public class GameAI_Ex4_Diver1 extends AI {
 				}
 			}
 			nodesMatrix[x][y].setVisited(true);
+			
 			// Get the next node to check
 			if (!visitNext.isEmpty()) {
 				visiting=visitNext.remove(0);
@@ -216,32 +305,41 @@ public class GameAI_Ex4_Diver1 extends AI {
 			}
 		}
 		
-		visitNext.clear();
 		ArrayList<Node> temp = new ArrayList<>();
-		temp.add(end.getPrevious()); // Skip last, same as pearl, obsolete
-		
+		temp.add(end);
 		while(temp.get(0).getPrevious() != null) {
 			temp.add(0, temp.get(0).getPrevious());
 		}
-		temp.remove(0); // remove first, it's the player position = obsolete
+		
 		return temp;
 	}
 	
 	
 	
-	/**
-	 * Calculates a direction to a certain Point, from player position.
-	 * 
-	 * @param point	Point to calculate the distance to.
-	 * @return
-	 */
-	private float calculateDirectionToPoint(Point point) {
-		
-		double distanceX = point.x - info.getX();
-		double distanceY = point.y - info.getY();
-		
-		return (float) -Math.atan2(distanceY, distanceX);
-	}
+//	private ArrayList<Node> smoothPath(ArrayList<Node> originalPath) {
+//		ArrayList<Node> temp = new ArrayList<>();
+//		// Keep the last element, it's the target
+//		Node lastNode = originalPath.remove(originalPath.size()-1);
+//		Point last = new Point(lastNode.getX() * CELL_SIZE, lastNode.getY() * CELL_SIZE);
+//		temp.add(0, lastNode);
+//		for (int i = originalPath.size()-2; i > 1 ; i--) {
+//			Node beforeNode = originalPath.get(i);
+//			Point before = new Point(beforeNode.getX() * CELL_SIZE, beforeNode.getY() * CELL_SIZE);
+//			Point collision = calculateCollision(last, before);
+//			if (collision != null) {
+//				lastNode = originalPath.get(i+1);
+//				last = new Point(lastNode.getX() * CELL_SIZE, lastNode.getY() * CELL_SIZE);
+//				if (temp.contains(lastNode)) {
+//					continue;
+//				} else {
+//					i++;
+//				}
+//				temp.add(0, lastNode);
+//			}
+//		}
+////		temp.add(0, originalPath.get(1));
+//		return temp;
+//	}
 	
 	
 	
@@ -270,7 +368,6 @@ public class GameAI_Ex4_Diver1 extends AI {
 						continue innerLoop;
 					}
 				}
-				
 				// Only if it doesn't intersect any, path is free
 				tempArray[x][y] = new Node (null, Integer.MAX_VALUE, false, x, y);
 			}
@@ -281,8 +378,37 @@ public class GameAI_Ex4_Diver1 extends AI {
 	
 	
 	/**
+	 * Calculates the coordinates of the first collision Point
+	 * @param from	The point we are starting from
+	 * @param to	The Aim towards we are swimming
+	 * @return		Point of collision in sigh line
+	 */
+	private Point calculateCollision(Point from, Point to) {
+		Point p = new Point();
+		float direction = calculateDirectionToPoint(from, to);
+		int n = (int) to.distance(from.x, from.y);
+		double sin = Math.sin(direction);
+		double cos = Math.cos(direction);
+		for (int i = 0; i < n; i+=10) {
+			p.x = (int) (to.x - cos*i);
+			p.y = (int) (to.y + sin*i);
+			for (Path2D obstacle : obstacleArray) {
+				if (obstacle.contains(p)) {
+					// Offset the last find
+					p.x = (int) (to.x - cos*(i-20));
+					p.y = (int) (to.y + sin*(i-20));
+					return p;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
 	 * Finds the point closest to the player.
-	 * 
 	 * @param points	The array of points to look over.
 	 * @return			A Point object of the closest point
 	 */
@@ -315,38 +441,27 @@ public class GameAI_Ex4_Diver1 extends AI {
 	
 	
 	/**
-	 * Finds the point closest to the player and removes it.
-	 * 
-	 * @param points	The array of points to look over.
+	 * Decide which item to buy
+	 * @return	The ShoppingItem to buy
 	 */
-	private void removeNearestPoint(Point[] points) {
+	private ShoppingItem buyItem() {
+		ShoppingItem Item = null;
 		
-		double minimumDistance = Double.MAX_VALUE;
-		int nearestIndex = 0;
-		int index = 0;
-		// Check all points
-		for (Point point : points) {
-			
-			//If it is already collected, ignore it and get next
-			if (point == null) {
-				++index;
-				continue;
-			}
-			
-			double currentPearlDistance = point.distance(info.getX(), info.getY());
-			
-			// A closer point is found, update all
-			if (currentPearlDistance < minimumDistance) {
-				minimumDistance = currentPearlDistance;
-				nearestIndex = index;
-			}
-			++index;
+		if (!boughtItems.contains(ShoppingItem.MOTORIZED_FLIPPERS)) {
+			Item = ShoppingItem.MOTORIZED_FLIPPERS;
+		} else if (!boughtItems.contains(ShoppingItem.BALLOON_SET)) {
+			Item = ShoppingItem.BALLOON_SET;
+		} else  if (!boughtItems.contains(ShoppingItem.STREAMLINED_WIG)){
+			Item = ShoppingItem.STREAMLINED_WIG;
+		} else {
+			Item = ShoppingItem.CORNER_CUTTER;
 		}
+		// Add the Item to list of bought items & reduce money
+		boughtItems.add(Item);
+		currentMoney -=2;
 		
-		points[nearestIndex] = null;
+		return Item;
 	}
-	
-	
 	
 	/**
 	 * Finds the points closest to the Ocean surface.
@@ -354,161 +469,27 @@ public class GameAI_Ex4_Diver1 extends AI {
 	 * @param pearls	The array of points to look over.
 	 * @return			A Point object of the topmost pearl.
 	 */
-	private Point findTopmostPoint(Point[] points) {
-		
-		Point closest = null;
-		int minimumDistance = Integer.MAX_VALUE;
-		
-		// Check all points
-		for (Point point : points) {
-			//If it is already collected, ignore it and get next
-			if (point == null) {
-				continue;
-			}
-			
-			// A closer point is found, update all
-			if (point.y < minimumDistance) {
-				minimumDistance = point.y;
-				closest = point;
-			}
-		}
-		
-		// Returns the closest Point
-		return closest;
-	}
-	
-	
-	
-	/**
-	 * Calculculates the coordinates of a predicted collision point
-	 * along a certain virtual ray of variable length.
-	 * 
-	 * @return		a Point where a collision occurred.
-	 */
-	private Point calculateCollisionPoint(int x, int y) {
-		Point p = new Point();
-		p.x = (int) x;
-		double sin = Math.sin(Math.PI/2);
-		for (int i = 0; i < x; i+=10) {
-			p.y = (int) (y - sin*i);
-			for (Path2D obstacle : obstacleArray) {
-				if (obstacle.contains(p)) {
-					return p;
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	private Point calculateCollision(Point to) {
-		Point p = new Point();
-		int n = (int) Math.abs(to.x - info.getX());
-		double sin = Math.sin(playerDirection);
-		double cos = Math.cos(playerDirection);
-		for (int i = 0; i < n; i+=10) {
-			p.y = (int) (to.y + sin*i);
-			p.x = (int) (to.x - cos*i);
-			for (Path2D obstacle : obstacleArray) {
-				if (obstacle.contains(p)) {
-					return p;
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	
-	/**
-	 * Initialize starting variables
-	 */
-	private void init() {
-		currentScore = 0;
-		currentMoney = 0;
-		pathToFollow = new ArrayList<>();
-		boughtItems = new ArrayList<>();
-		nextAim = new Point();
-		obstacleArray = info.getScene().getObstacles();
-		pearlArray = info.getScene().getPearl();
-		bottleArray = info.getScene().getRecyclingProducts();
-		sceneHeight = info.getScene().getHeight();
-		sceneWidth = info.getScene().getWidth();
-		shipPosition = new Point(info.getScene().getShopPosition(), 0);
-		
-
-		//Get calculated values
-//		nearestPearl = findTopmostPearl(pearlArray); // Get top to bottom
-//		nearestPearl = findNearestPearl(pearlArray); // closest always
-//		nearestPearl = findNearestPoint(pearlArray);
-	}
-	
-	private void makeDecision() {
-		if (info.getMoney() != currentMoney && !isShopping) {
-			currentMoney = info.getMoney();
-			removeNearestPoint(bottleArray);
-		}
-		
-		if (currentMoney < 2 && boughtItems.size() < 4) {
-			nextAim = findNearestPoint(bottleArray);
-		}
-		
-//		if (!isDiving && isShopping) {
-//		} else if (isDiving && !isShopping) {
-//			nextAim = findNearestPoint(pearlArray);
-//		} else if (!isDiving && !isShopping){
-//			nextAim = new Point((int) info.getX(), 0);
-//		}
-		
-		if (currentMoney >= 2 && boughtItems.size() < 4) {
-			isShopping = true;
-			nextAim = shipPosition;
-		}
-		
-		directSwimOrPath(nextAim);
-	}
-	
-	/**
-	 * Decide if you swim to an aim directly or with pathfinding
-	 * @param to	Point to swim to
-	 */
-	private void directSwimOrPath(Point to) {
-		playerDirection = calculateDirectionToPoint(nextAim);
-//		Point first = calculateCollisionPoint(to.x, to.y);
-		Point first = calculateCollision(to);
-		// No collisions, dive down at aim position, swim there first at surface
-		if (first != null) {
-			pathToFollow = calculateDijkstraPath(new Point((int)info.getX(),(int)info.getY()), first);
-			Node node = pathToFollow.remove(0);
-			nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
-			nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
-		}
-	}
-	
-	/**
-	 * Decide which item to buy, based on some parameters
-	 * @return	The ShoppingItem to buy
-	 */
-	private ShoppingItem buyItem() {
-		ShoppingItem Item;
-		
-		if (!boughtItems.contains(ShoppingItem.MOTORIZED_FLIPPERS)) {
-			Item = ShoppingItem.MOTORIZED_FLIPPERS;
-		} else if (!haveSurfacePearls && !boughtItems.contains(ShoppingItem.BALLOON_SET)) {
-			Item = ShoppingItem.BALLOON_SET;
-		} else {
-			Item = ShoppingItem.STREAMLINED_WIG;
-		}
-		// Add the Item to list of bought items
-		boughtItems.add(Item);
-		
-		return Item;
-	}
 	
 	@Override
 	public void drawDebugStuff(Graphics2D gfx) {
 		gfx.setColor(Color.MAGENTA);
-		gfx.drawLine((int) info.getX(),(int) info.getY(), nextAim.x, nextAim.y);
+		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
+		
+		if (pathToFollow.size() >0) {
+			
+			Node n1;
+			Node n2;
+			for (int i = 0; i < pathToFollow.size()-1; i++) {
+				if(i%2 == 0) {
+					gfx.setColor(Color.GREEN);
+				} else {
+					gfx.setColor(Color.RED);
+				}
+				n1 = pathToFollow.get(i);
+				n2 = pathToFollow.get(i+1);
+				
+				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
+			}
+		}
 	}
-	
 }
