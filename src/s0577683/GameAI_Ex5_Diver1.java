@@ -14,11 +14,11 @@ import lenz.htw.ai4g.ai.PlayerAction;
 import lenz.htw.ai4g.ai.ShoppingAction;
 import lenz.htw.ai4g.ai.ShoppingItem;
 
-public class GameAI_Ex4_Diver1 extends AI {
+public class GameAI_Ex5_Diver1 extends AI {
 	private final int CELL_SIZE = 15;
 	
 	//Complex Types
-	private ArrayList<Node> pathToFollow;
+	private ArrayList<Point> pathToFollow;
 	private ArrayList<ShoppingItem> boughtItems;
 	private Path2D[] obstacleArray;
 	private Point nextAim;
@@ -27,15 +27,17 @@ public class GameAI_Ex4_Diver1 extends AI {
 	private Point[] bottleArray;
 	
 	//Primitive Types
-	private boolean isDiving;
+	private int airFraction;
 	private int currentScore;
 	private int currentMoney;
 	private int sceneHeight;
 	private int sceneWidth;
 	private float playerDirection;
 	
-	public GameAI_Ex4_Diver1 (Info info) {
+	public GameAI_Ex5_Diver1 (Info info) {
 		super(info);
+		
+		enlistForTournament(577683, 577423);
 		
 		//Get initial values 
 		init();
@@ -45,17 +47,17 @@ public class GameAI_Ex4_Diver1 extends AI {
 
 	@Override
 	public String getName() {
-		return "Kinilau-A-Mano";
+		return "Tiamat";
 	}
 
 	@Override
 	public Color getPrimaryColor() {
-		return Color.GRAY;
+		return Color.ORANGE;
 	}
 
 	@Override
 	public Color getSecondaryColor() {
-		return Color.CYAN;
+		return Color.GREEN;
 	}
 
 	@Override
@@ -64,28 +66,27 @@ public class GameAI_Ex4_Diver1 extends AI {
 		updateNumbers();
 		
 		// If you have money and are close to ship, buy something
-		if (isCloseToShip() && currentMoney >= 2 && boughtItems.size() <4){
+		if (isCloseToShip() && currentMoney >= 2 && boughtItems.size() < 4){
 			return new ShoppingAction(buyItem());
 		}
-		
-//		makeDecision();
-//		if (isDiving) {
 //			
-//			// IF you are following a path, continue it and do this
-			if (!pathToFollow.isEmpty()) {
-				if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
-					Node node = pathToFollow.remove(0);
-					nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
-					nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
-					playerDirection = calculateDirectionToPoint(new Point((int)info.getX(),(int)info.getY()), nextAim);
-				}
-			} else {
-				makeDecision();
+//		// IF you are following a path, continue it and do this
+		if (!pathToFollow.isEmpty()) {
+			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
+				nextAim = pathToFollow.remove(0);
 			}
-//		} else {
-//			makeDecision();
-//		}
-			
+		}
+		
+		// If you don't have enough air resurfaces
+		if (info.getAir() < info.getMaxAir() * 1/airFraction) {
+			pathToFollow.clear();
+			nextAim = new Point((int) info.getX(), 0);
+			directSwimOrPath(new Point((int) info.getX(), (int) info.getY()), new Point((int) info.getX(), 0));
+		} else {
+			makeDecision();
+		}
+		
+		playerDirection = calculateDirectionToPoint(new Point((int)info.getX(),(int)info.getY()), nextAim);
 		return new DivingAction(info.getMaxAcceleration(), playerDirection);
 	}
 	
@@ -101,19 +102,13 @@ public class GameAI_Ex4_Diver1 extends AI {
 	 */
 	private void directSwimOrPath(Point from, Point to) {
 		// Check for collision
-		Point collisionPoint = calculateCollision(from,to);
+		Point collisionPoint = calculateCollision(from, to);
 		// If there's IS one, get the path to the pearl
 		if (collisionPoint != null) {
 			pathToFollow = calculateDijkstraPath(from, collisionPoint);
-			pathToFollow.add(new Node(to.x/CELL_SIZE, to.y / CELL_SIZE));
-//			pathToFollow = smoothPath(pathToFollow);
-			Node node = pathToFollow.remove(0);
-			nextAim.x = node.getX() * CELL_SIZE + CELL_SIZE/2;
-			nextAim.y = node.getY() * CELL_SIZE + CELL_SIZE/2;
-			playerDirection = calculateDirectionToPoint(new Point((int)info.getX(),(int)info.getY()), nextAim);
-		} else {
-			// If there's no collision dive straight through
-			playerDirection = calculateDirectionToPoint(from, to);
+			pathToFollow.add(new Point(to.x, to.y));
+			// pathToFollow = smoothPath(pathToFollow);
+			nextAim = pathToFollow.remove(0);
 		}
 	}
 	
@@ -123,9 +118,9 @@ public class GameAI_Ex4_Diver1 extends AI {
 	 * Initialize starting variables.
 	 */
 	private void init() {
+		airFraction = 2;
 		currentScore = 0;
 		currentMoney = 0;
-		isDiving = true;
 		nextAim = new Point();
 		boughtItems = new ArrayList<>();
 		pathToFollow = new ArrayList<>();
@@ -144,30 +139,21 @@ public class GameAI_Ex4_Diver1 extends AI {
 	 * @return 
 	 */
 	private void makeDecision() {
-		// If no items yet buy supplies first
-		if (boughtItems.size() < 4) {
-			// Not enough money yet
-			if (currentMoney < 2) {
-				nextAim = findNearestPoint(bottleArray);
+		if (pathToFollow.isEmpty()) {
+			// If no items yet buy supplies first
+			if (boughtItems.size() < 4) {
+				// Not enough money yet
+				if (currentMoney < 2) {
+					nextAim = findNearestPoint(bottleArray);
+				} else {
+					nextAim = new Point(shipPosition);
+				}
 			} else {
-				nextAim = shipPosition;
+				nextAim = findNearestPoint(pearlArray);
 			}
-		} else {
-			nextAim = findNearestPoint(pearlArray);
+			
+			directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
 		}
-		
-		// If you don't have enough air or just resurfaces, change your state
-		if ((info.getAir() < info.getMaxAir() * 1/3) && isDiving) {
-			isDiving = false;
-			nextAim = new Point((int) info.getX(), 0);
-		}
-		
-		if (info.getAir() == info.getMaxAir() && !isDiving){
-			isDiving = true;
-			nextAim = findNearestPoint(pearlArray);
-		}
-		
-		directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
 	}
 	
 	
@@ -209,14 +195,15 @@ public class GameAI_Ex4_Diver1 extends AI {
 		if (info.getScore() != currentScore) {
 			currentScore = info.getScore();
 			removeNearestPoint(pearlArray);
-			
+			makeDecision();
 		}
 		
-		if (info.getMoney() > currentMoney) {
+		if (info.getMoney() != currentMoney) {
 			currentMoney = info.getMoney();
 			if(!isCloseToShip()) {
 				removeNearestPoint(bottleArray);
 			}
+			makeDecision();
 		}
 	}
 	
@@ -257,12 +244,16 @@ public class GameAI_Ex4_Diver1 extends AI {
 	 * @param to	Point where we want to go to
 	 * @return		ArrayList of Nodes to follow step by step
 	 */
-	private ArrayList<Node> calculateDijkstraPath(Point from, Point to) {
+	private ArrayList<Point> calculateDijkstraPath(Point from, Point to) {
 		Node[][] nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		ArrayList<Node> visitNext = new ArrayList<>();
 
-		Node begin = nodesMatrix[from.x / CELL_SIZE][from.y / CELL_SIZE];
-		Node end = nodesMatrix[(to.x / CELL_SIZE)-1][(to.y / CELL_SIZE)];
+		int fromX = Math.max(0, Math.min((from.x / CELL_SIZE), nodesMatrix.length-1));
+		int fromY = from.y / CELL_SIZE;
+		int toX = Math.max(0, Math.min((to.x / CELL_SIZE), nodesMatrix.length-1));
+		int toY = to.y / CELL_SIZE;
+		Node begin = nodesMatrix[fromX][fromY];
+		Node end = nodesMatrix[toX][toY];
 
 		begin.setDistance(0);
 		visitNext.add(begin);
@@ -303,10 +294,18 @@ public class GameAI_Ex4_Diver1 extends AI {
 			}
 		}
 		
-		ArrayList<Node> temp = new ArrayList<>();
-		temp.add(end);
-		while(temp.get(0).getPrevious() != null) {
-			temp.add(0, temp.get(0).getPrevious());
+		ArrayList<Point> temp = new ArrayList<>();
+		Point p = new Point();
+		p.x = end.getX() * CELL_SIZE + CELL_SIZE/2;
+		p.y = end.getY() * CELL_SIZE + CELL_SIZE/2;
+		temp.add(p);
+		while(end.getPrevious() != null) {
+			Point p2 = new Point();
+			p2.x = end.getPrevious().getX() * CELL_SIZE + CELL_SIZE/2;
+			p2.y = end.getPrevious().getY() * CELL_SIZE + CELL_SIZE/2;
+			
+			temp.add(0, p2);
+			end = end.getPrevious();
 		}
 		
 		return temp;
@@ -445,49 +444,19 @@ public class GameAI_Ex4_Diver1 extends AI {
 	private ShoppingItem buyItem() {
 		ShoppingItem Item = null;
 		
-		if (!boughtItems.contains(ShoppingItem.MOTORIZED_FLIPPERS)) {
-			Item = ShoppingItem.MOTORIZED_FLIPPERS;
+		if (!boughtItems.contains(ShoppingItem.CORNER_CUTTER)) {
+			Item = ShoppingItem.CORNER_CUTTER;
 		} else if (!boughtItems.contains(ShoppingItem.BALLOON_SET)) {
+			airFraction = 3;
 			Item = ShoppingItem.BALLOON_SET;
 		} else  if (!boughtItems.contains(ShoppingItem.STREAMLINED_WIG)){
 			Item = ShoppingItem.STREAMLINED_WIG;
 		} else {
-			Item = ShoppingItem.CORNER_CUTTER;
+			Item = ShoppingItem.MOTORIZED_FLIPPERS;
 		}
 		// Add the Item to list of bought items & reduce money
 		boughtItems.add(Item);
-		currentMoney -=2;
 		
 		return Item;
-	}
-	
-	/**
-	 * Finds the points closest to the Ocean surface.
-	 * 
-	 * @param pearls	The array of points to look over.
-	 * @return			A Point object of the topmost pearl.
-	 */
-	
-	@Override
-	public void drawDebugStuff(Graphics2D gfx) {
-		gfx.setColor(Color.MAGENTA);
-		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
-		
-		if (pathToFollow.size() >0) {
-			
-			Node n1;
-			Node n2;
-			for (int i = 0; i < pathToFollow.size()-1; i++) {
-				if(i%2 == 0) {
-					gfx.setColor(Color.GREEN);
-				} else {
-					gfx.setColor(Color.RED);
-				}
-				n1 = pathToFollow.get(i);
-				n2 = pathToFollow.get(i+1);
-				
-				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
-			}
-		}
 	}
 }
