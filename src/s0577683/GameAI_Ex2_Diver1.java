@@ -64,7 +64,7 @@ public class GameAI_Ex2_Diver1 extends AI {
 
 	@Override
 	public String getName() {
-		return "DrownedOne";
+		return "Drowned One";
 	}
 
 	@Override

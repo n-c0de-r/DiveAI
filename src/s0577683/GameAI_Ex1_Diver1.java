@@ -10,7 +10,7 @@ import lenz.htw.ai4g.ai.DivingAction;
 import lenz.htw.ai4g.ai.Info;
 import lenz.htw.ai4g.ai.PlayerAction;
 
-public class FirstAI3 extends AI {
+public class GameAI_Ex1_Diver1 extends AI {
 	private Point[] pearls;
 	private Point nearestPearl;
 	private int nearestPearlIndex;
@@ -19,7 +19,7 @@ public class FirstAI3 extends AI {
 	private Path2D[] obstacles;
 	private int obstacleIndex;
 	
-	public FirstAI3 (Info info) {
+	public GameAI_Ex1_Diver1 (Info info) {
 		super(info);
 		
 		obstacles = info.getScene().getObstacles();

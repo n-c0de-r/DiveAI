@@ -461,33 +461,26 @@ public class GameAI_Ex4_Diver1 extends AI {
 		return Item;
 	}
 	
-	/**
-	 * Finds the points closest to the Ocean surface.
-	 * 
-	 * @param pearls	The array of points to look over.
-	 * @return			A Point object of the topmost pearl.
-	 */
-	
-	@Override
-	public void drawDebugStuff(Graphics2D gfx) {
-		gfx.setColor(Color.MAGENTA);
-		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
-		
-		if (pathToFollow.size() >0) {
-			
-			Node n1;
-			Node n2;
-			for (int i = 0; i < pathToFollow.size()-1; i++) {
-				if(i%2 == 0) {
-					gfx.setColor(Color.GREEN);
-				} else {
-					gfx.setColor(Color.RED);
-				}
-				n1 = pathToFollow.get(i);
-				n2 = pathToFollow.get(i+1);
-				
-				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
-			}
-		}
-	}
+//	@Override
+//	public void drawDebugStuff(Graphics2D gfx) {
+//		gfx.setColor(Color.MAGENTA);
+//		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
+//		
+//		if (pathToFollow.size() >0) {
+//			
+//			Node n1;
+//			Node n2;
+//			for (int i = 0; i < pathToFollow.size()-1; i++) {
+//				if(i%2 == 0) {
+//					gfx.setColor(Color.GREEN);
+//				} else {
+//					gfx.setColor(Color.RED);
+//				}
+//				n1 = pathToFollow.get(i);
+//				n2 = pathToFollow.get(i+1);
+//				
+//				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
+//			}
+//		}
+//	}
 }

@@ -75,13 +75,6 @@ public class GameAI_Ex5_Diver1 extends AI {
 			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
 				nextAim = pathToFollow.remove(0);
 			}
-		}
-		
-		// If you don't have enough air resurfaces
-		if (info.getAir() < info.getMaxAir() * 1/airFraction) {
-			pathToFollow.clear();
-			nextAim = new Point((int) info.getX(), 0);
-			directSwimOrPath(new Point((int) info.getX(), (int) info.getY()), new Point((int) info.getX(), 0));
 		} else {
 			makeDecision();
 		}
@@ -136,24 +129,25 @@ public class GameAI_Ex5_Diver1 extends AI {
 	
 	/**
 	 * Some crappy decision making function.
-	 * @return 
 	 */
 	private void makeDecision() {
-		if (pathToFollow.isEmpty()) {
-			// If no items yet buy supplies first
-			if (boughtItems.size() < 4) {
-				// Not enough money yet
-				if (currentMoney < 2) {
-					nextAim = findNearestPoint(bottleArray);
-				} else {
-					nextAim = new Point(shipPosition);
-				}
+		// If no items yet buy supplies first
+		if (boughtItems.size() < 4) {
+			// Not enough money yet
+			if (currentMoney < 2) {
+				nextAim = findNearestPoint(bottleArray);
 			} else {
-				nextAim = findNearestPoint(pearlArray);
+				nextAim = new Point(shipPosition);
 			}
-			
-			directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
+		} else {
+			nextAim = findNearestPoint(pearlArray);
 		}
+		// If you don't have enough air resurfaces
+		if (info.getAir() < info.getMaxAir() * 1/airFraction) {
+			pathToFollow.clear(); // TODO: Fix this!
+			nextAim = new Point((int) info.getX(), 0);
+		}
+		directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
 	}
 	
 	
@@ -254,7 +248,21 @@ public class GameAI_Ex5_Diver1 extends AI {
 		int toY = to.y / CELL_SIZE;
 		Node begin = nodesMatrix[fromX][fromY];
 		Node end = nodesMatrix[toX][toY];
-
+		
+		if (toX >= 1) {
+			nodesMatrix[toX-1][toY].setVisited(false);
+		}
+		if (toX < nodesMatrix.length-1) {
+			nodesMatrix[toX+1][toY].setVisited(false);
+		}
+		if (toY >= 1) {
+			nodesMatrix[toX][toY-1].setVisited(false);
+		}
+		if (toY < nodesMatrix[toX].length-1) {
+			nodesMatrix[toX][toY+1].setVisited(false);
+		}
+		
+		
 		begin.setDistance(0);
 		visitNext.add(begin);
 		end.setVisited(false);
@@ -458,5 +466,28 @@ public class GameAI_Ex5_Diver1 extends AI {
 		boughtItems.add(Item);
 		
 		return Item;
+	}
+	
+	@Override
+	public void drawDebugStuff(Graphics2D gfx) {
+		gfx.setColor(Color.MAGENTA);
+		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
+		
+		if (pathToFollow.size() >0) {
+			
+			Point  n1;
+			Point  n2;
+			for (int i = 0; i < pathToFollow.size()-1; i++) {
+				if(i%2 == 0) {
+					gfx.setColor(Color.GREEN);
+				} else {
+					gfx.setColor(Color.RED);
+				}
+				n1 = pathToFollow.get(i);
+				n2 = pathToFollow.get(i+1);
+				
+				gfx.drawLine(n1.x, n1.y, n2.x, n2.y);
+			}
+		}
 	}
 }
