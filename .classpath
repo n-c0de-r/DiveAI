@@ -6,6 +6,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/HTW-IMI/Documents/GitHub/GameAI/src/ai.jar"/>
+	<classpathentry kind="lib" path="C:/Users/HTW-IMI/Documents/GitHub/GameAI/ai.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

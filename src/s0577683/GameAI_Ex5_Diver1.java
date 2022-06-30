@@ -95,6 +95,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 	 */
 	private void directSwimOrPath(Point from, Point to) {
 		// Check for collision
+		pathToFollow.clear();
 		Point collisionPoint = calculateCollision(from, to);
 		// If there's IS one, get the path to the pearl
 		if (collisionPoint != null) {
@@ -144,7 +145,6 @@ public class GameAI_Ex5_Diver1 extends AI {
 		}
 		// If you don't have enough air resurfaces
 		if (info.getAir() < info.getMaxAir() * 1/airFraction) {
-			pathToFollow.clear(); // TODO: Fix this!
 			nextAim = new Point((int) info.getX(), 0);
 		}
 		directSwimOrPath(new Point((int)info.getX(),(int)info.getY()), nextAim);
@@ -249,19 +249,19 @@ public class GameAI_Ex5_Diver1 extends AI {
 		Node begin = nodesMatrix[fromX][fromY];
 		Node end = nodesMatrix[toX][toY];
 		
-		if (toX >= 1) {
-			nodesMatrix[toX-1][toY].setVisited(false);
-		}
-		if (toX < nodesMatrix.length-1) {
-			nodesMatrix[toX+1][toY].setVisited(false);
-		}
-		if (toY >= 1) {
+		// Dirty fix for pearls that are within widely intersecting areas
+//		if (toX >= 1) {
+//			nodesMatrix[toX-1][toY].setVisited(false);
+//		}
+//		if (toX < nodesMatrix.length-1) {
+//			nodesMatrix[toX+1][toY].setVisited(false);
+//		}
+		if (toY >= 1 && nodesMatrix[toX][toY-1].isVisited()) {
 			nodesMatrix[toX][toY-1].setVisited(false);
 		}
-		if (toY < nodesMatrix[toX].length-1) {
-			nodesMatrix[toX][toY+1].setVisited(false);
-		}
-		
+//		if (toY < nodesMatrix[toX].length-1) {
+//			nodesMatrix[toX][toY+1].setVisited(false);
+//		}
 		
 		begin.setDistance(0);
 		visitNext.add(begin);
@@ -389,16 +389,19 @@ public class GameAI_Ex5_Diver1 extends AI {
 	 * @return		Point of collision in sigh line
 	 */
 	private Point calculateCollision(Point from, Point to) {
+		Rectangle rect = new Rectangle();
 		Point p = new Point();
 		float direction = calculateDirectionToPoint(from, to);
-		int n = (int) to.distance(from.x, from.y);
+		int n = (int) to.distance(from.x, from.y)-CELL_SIZE;
 		double sin = Math.sin(direction);
 		double cos = Math.cos(direction);
-		for (int i = 0; i < n; i+=10) {
-			p.x = (int) (to.x - cos*i);
-			p.y = (int) (to.y + sin*i);
+		for (int i = 0; i < n; i+=CELL_SIZE) {
+			int x = (int) (to.x - cos*i);
+			int y = (int) (to.y + sin*i);
+			rect.setBounds(x-2, y-2, 4, 4);
 			for (Path2D obstacle : obstacleArray) {
-				if (obstacle.contains(p)) {
+//				if (obstacle.contains(p)) {
+				if(obstacle.intersects(rect)) {
 					// Offset the last find
 					p.x = (int) (to.x - cos*(i-20));
 					p.y = (int) (to.y + sin*(i-20));
