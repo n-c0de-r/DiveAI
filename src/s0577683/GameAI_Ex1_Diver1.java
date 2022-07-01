@@ -3,7 +3,6 @@ package s0577683;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
 
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;

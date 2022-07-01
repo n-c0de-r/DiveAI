@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import lenz.htw.ai4g.ai.AI;
 import lenz.htw.ai4g.ai.DivingAction;
@@ -14,7 +15,7 @@ import lenz.htw.ai4g.ai.PlayerAction;
 import lenz.htw.ai4g.ai.ShoppingAction;
 import lenz.htw.ai4g.ai.ShoppingItem;
 
-public class GameAI_Ex5_Diver1 extends AI {
+public class GameAI_Ex5_Diver2 extends AI {
 	private final int CELL_SIZE = 15;
 	
 	//Complex Types
@@ -25,6 +26,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 	private Point shipPosition;
 	private Point[] pearlArray;
 	private Point[] bottleArray;
+	private Rectangle[] streams;
 	
 	//Primitive Types
 	private int airFraction;
@@ -34,7 +36,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 	private int sceneWidth;
 	private float playerDirection;
 	
-	public GameAI_Ex5_Diver1 (Info info) {
+	public GameAI_Ex5_Diver2 (Info info) {
 		super(info);
 		
 		enlistForTournament(577683, 577423);
@@ -47,7 +49,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 
 	@Override
 	public String getName() {
-		return "Old Tiamat";
+		return "Tiamat";
 	}
 
 	@Override
@@ -69,8 +71,8 @@ public class GameAI_Ex5_Diver1 extends AI {
 		if (isCloseToShip() && currentMoney >= 2 && boughtItems.size() < 4){
 			return new ShoppingAction(buyItem());
 		}
-//			
-//		// IF you are following a path, continue it and do this
+		
+		// IF you are following a path, continue it and do this
 		if (!pathToFollow.isEmpty()) {
 			if (nextAim.distance(info.getX(), info.getY()) < CELL_SIZE) {
 				nextAim = pathToFollow.remove(0);
@@ -124,6 +126,18 @@ public class GameAI_Ex5_Diver1 extends AI {
 		sceneHeight = info.getScene().getHeight();
 		sceneWidth = info.getScene().getWidth();
 		shipPosition = new Point(info.getScene().getShopPosition(), 0);
+		Rectangle[] rectsToL = info.getScene().getStreamsToTheLeft();
+		Rectangle[] rectsToR = info.getScene().getStreamsToTheRight();
+		streams = new Rectangle[rectsToL.length + rectsToR.length];
+		int pos= 0;
+		for (Rectangle rectangle : rectsToL) {
+			streams[pos] = rectangle;
+			pos++;
+		}
+		for (Rectangle rectangle : rectsToR) {
+			streams[pos] = rectangle;
+			pos++;
+		}
 	}
 	
 	
@@ -133,7 +147,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 	 */
 	private void makeDecision() {
 		// If no items yet buy supplies first
-		if (boughtItems.size() < 4) {
+		if (boughtItems.size() < 4 && bottleArray.length != 0) {
 			// Not enough money yet
 			if (currentMoney < 2) {
 				nextAim = findNearestPoint(bottleArray);
@@ -215,6 +229,18 @@ public class GameAI_Ex5_Diver1 extends AI {
 	
 	
 	
+	private boolean isInStream(Point point) {
+		// You don't have the items to get this point right now!
+		for (Rectangle rect : streams) {
+			if (rect.contains(point) && !boughtItems.contains(ShoppingItem.CORNER_CUTTER)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	
 	/**
 	 * Calculates a direction to a certain Point, from player position.
 	 * @param from	Point to calculate direction from.
@@ -277,8 +303,21 @@ public class GameAI_Ex5_Diver1 extends AI {
 				if (x + i < 0 || x + i >= nodesMatrix.length) {
 					continue;
 				}
+				Point p = new Point(nodesMatrix[x + i][y].getX() * CELL_SIZE + CELL_SIZE/2,
+						nodesMatrix[x + i][y].getY() * CELL_SIZE + CELL_SIZE/2);
+				if (isInStream(p)) {
+					i++;
+					continue;
+				}
 				for (int j = -1; j <= 1; j++) {
 					if (y + j < 0 || y + j >= nodesMatrix[0].length || (i == 0 && j == 0)) {
+						continue;
+					}
+					
+					p = new Point(nodesMatrix[x + i][y + j].getX() * CELL_SIZE + CELL_SIZE/2,
+							nodesMatrix[x + i][y + j].getY() * CELL_SIZE + CELL_SIZE/2);
+					if (isInStream(p)) {
+						j++;
 						continue;
 					}
 					if (!nodesMatrix[x + i][y + j].isVisited()) {
@@ -429,7 +468,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 		for (Point point : points) {
 			
 			//If it is already collected, ignore it and get next
-			if (point == null) {
+			if (point == null || isInStream(point)) {
 				continue;
 			}
 			
