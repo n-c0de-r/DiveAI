@@ -5,4 +5,7 @@ For "AI for Games" class we got a very basic diving game given by our professor 
 
 <img src="GameAI_show.gif">
 
-I left the debugging drawings in the GIF so you can see the weird choices each AI diver makes. They are all from different development stages and behave differently. Funny, the "latest" is often slower, but (given the right map) much safer and wouldn't drown fast - but wouldn't win a tournament's first place that way.
+I left the debugging drawings in the GIF so you can see the weird choices each AI diver makes. They are all from different development stages and behave differently. Funny, the "latest" (yellow) is often slower, but (given the right map) much safer and wouldn't drown fast - but wouldn't win a tournament's first place that way.
+
+PS:
+This project still has many issues to fix. Can't wait to tackle them with more time and hopefully even more professionally then, too.
