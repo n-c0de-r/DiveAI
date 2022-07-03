@@ -438,6 +438,18 @@ public class GameAI_Ex5_Diver2 extends AI {
 			int x = (int) (to.x - cos*i);
 			int y = (int) (to.y + sin*i);
 			rect.setBounds(x-2, y-2, 4, 4);
+			for (Rectangle stream : streams) {
+//				if (obstacle.contains(p)) {
+				if(stream.intersects(rect) &&
+						!boughtItems.contains(ShoppingItem.CORNER_CUTTER) &&
+						!(info.getAir() < info.getMaxAir() * 1/airFraction)) {
+					// Offset the last find
+					p.x = (int) (to.x - cos*(i-20));
+					p.y = (int) (to.y + sin*(i-20));
+					return p;
+				}
+			}
+			
 			for (Path2D obstacle : obstacleArray) {
 //				if (obstacle.contains(p)) {
 				if(obstacle.intersects(rect)) {
@@ -512,7 +524,7 @@ public class GameAI_Ex5_Diver2 extends AI {
 	
 	@Override
 	public void drawDebugStuff(Graphics2D gfx) {
-		gfx.setColor(Color.MAGENTA);
+		gfx.setColor(Color.ORANGE);
 		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
 		
 		if (pathToFollow.size() >0) {
@@ -521,9 +533,9 @@ public class GameAI_Ex5_Diver2 extends AI {
 			Point  n2;
 			for (int i = 0; i < pathToFollow.size()-1; i++) {
 				if(i%2 == 0) {
-					gfx.setColor(Color.GREEN);
+					gfx.setColor(Color.ORANGE);
 				} else {
-					gfx.setColor(Color.RED);
+					gfx.setColor(Color.YELLOW);
 				}
 				n1 = pathToFollow.get(i);
 				n2 = pathToFollow.get(i+1);

@@ -50,7 +50,7 @@ public class GameAI_Ex4_Diver1 extends AI {
 
 	@Override
 	public Color getPrimaryColor() {
-		return Color.GRAY;
+		return Color.BLACK;
 	}
 
 	@Override
@@ -461,26 +461,26 @@ public class GameAI_Ex4_Diver1 extends AI {
 		return Item;
 	}
 	
-//	@Override
-//	public void drawDebugStuff(Graphics2D gfx) {
-//		gfx.setColor(Color.MAGENTA);
-//		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
-//		
-//		if (pathToFollow.size() >0) {
-//			
-//			Node n1;
-//			Node n2;
-//			for (int i = 0; i < pathToFollow.size()-1; i++) {
-//				if(i%2 == 0) {
-//					gfx.setColor(Color.GREEN);
-//				} else {
-//					gfx.setColor(Color.RED);
-//				}
-//				n1 = pathToFollow.get(i);
-//				n2 = pathToFollow.get(i+1);
-//				
-//				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
-//			}
-//		}
-//	}
+	@Override
+	public void drawDebugStuff(Graphics2D gfx) {
+		gfx.setColor(Color.BLACK);
+		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
+		
+		if (pathToFollow.size() >0) {
+			
+			Node n1;
+			Node n2;
+			for (int i = 0; i < pathToFollow.size()-1; i++) {
+				if(i%2 == 0) {
+					gfx.setColor(Color.GRAY);
+				} else {
+					gfx.setColor(Color.DARK_GRAY);
+				}
+				n1 = pathToFollow.get(i);
+				n2 = pathToFollow.get(i+1);
+				
+				gfx.drawLine(n1.getX()*CELL_SIZE, n1.getY()*CELL_SIZE, n2.getX()*CELL_SIZE, n2.getY()*CELL_SIZE);
+			}
+		}
+	}
 }

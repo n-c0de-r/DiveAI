@@ -1,6 +1,7 @@
 package s0577683;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.Path2D;
 
@@ -202,5 +203,10 @@ public class GameAI_Ex1_Diver1 extends AI {
 		
 		return collisionPoint;
 	}
-
+	
+	@Override
+	public void drawDebugStuff(Graphics2D gfx) {
+		gfx.setColor(Color.RED);
+		gfx.drawLine((int)info.getX(), (int)info.getY(), nearestPearl.x, nearestPearl.y);
+	}
 }

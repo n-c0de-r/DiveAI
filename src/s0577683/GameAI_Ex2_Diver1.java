@@ -48,7 +48,8 @@ public class GameAI_Ex2_Diver1 extends AI {
 //		nearestPearl = findNearestPearl(pearlArray); // closest always
 		nodesMatrix = calculateIntersections(sceneWidth, sceneHeight);
 		begin = nodesMatrix[(int) (info.getX() / CELL_SIZE)][(int) (info.getY() / CELL_SIZE)];
-		end = nodesMatrix[(nearestPearl.x / CELL_SIZE)-1][(nearestPearl.y / CELL_SIZE)];
+		int x = Math.max((nearestPearl.x / CELL_SIZE)-1, 0);
+		end = nodesMatrix[x][(nearestPearl.y / CELL_SIZE)];
 		begin.setDistance(0);
 		visitNext.add(begin);
 		end.setVisited(false);
@@ -459,5 +460,27 @@ public class GameAI_Ex2_Diver1 extends AI {
 		
 		return false;
 	}
-
+	
+	@Override
+	public void drawDebugStuff(Graphics2D gfx) {
+		gfx.setColor(Color.GREEN);
+		gfx.drawLine((int)info.getX(), (int)info.getY(), nextAim.x, nextAim.y);
+		
+		if (pathToFollow.size() >0) {
+			
+			Node n1;
+			Node n2;
+			for (int i = 0; i < pathToFollow.size()-1; i++) {
+				if(i%2 == 0) {
+					gfx.setColor(Color.GREEN);
+				} else {
+					gfx.setColor(Color.CYAN);
+				}
+				n1 = pathToFollow.get(i);
+				n2 = pathToFollow.get(i+1);
+				
+				gfx.drawLine(n1.getX()*CELL_SIZE+CELL_SIZE/2, n1.getY()*CELL_SIZE+CELL_SIZE/2, n2.getX()*CELL_SIZE+CELL_SIZE/2, n2.getY()*CELL_SIZE+CELL_SIZE/2);
+			}
+		}
+	}
 }

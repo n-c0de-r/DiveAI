@@ -37,8 +37,6 @@ public class GameAI_Ex5_Diver1 extends AI {
 	public GameAI_Ex5_Diver1 (Info info) {
 		super(info);
 		
-		enlistForTournament(577683, 577423);
-		
 		//Get initial values 
 		init();
 
@@ -52,7 +50,7 @@ public class GameAI_Ex5_Diver1 extends AI {
 
 	@Override
 	public Color getPrimaryColor() {
-		return Color.ORANGE;
+		return Color.MAGENTA;
 	}
 
 	@Override
@@ -482,9 +480,9 @@ public class GameAI_Ex5_Diver1 extends AI {
 			Point  n2;
 			for (int i = 0; i < pathToFollow.size()-1; i++) {
 				if(i%2 == 0) {
-					gfx.setColor(Color.GREEN);
+					gfx.setColor(Color.MAGENTA);
 				} else {
-					gfx.setColor(Color.RED);
+					gfx.setColor(Color.PINK);
 				}
 				n1 = pathToFollow.get(i);
 				n2 = pathToFollow.get(i+1);
